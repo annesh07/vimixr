@@ -66,7 +66,7 @@ ELBO_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
   #     (t(L1[i,, drop=FALSE])/L2[i,1]) - 0.5*Mu0 %*% inv_C00 %*% t(Mu0)
   # }
   e20 <- diag(-0.5*L21 %*% inv_C00 %*% t(L21))
-  e21 <- - 0.5*sum(diag(inv_C00))/L2
+  e21 <- - 0.5*(D*L20)/L2
   e22 <- Mu0 %*% inv_C00 %*% t(L21)
   e2 <-  T0*(-D/2*log(2*pi) + D*0.5*log(L20)- 0.5*Mu0 %*% inv_C00 %*% t(Mu0)) +
     sum(e20) + sum(e21) + sum(e22)

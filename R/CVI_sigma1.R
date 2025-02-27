@@ -1,55 +1,23 @@
-#' Title Collapsed Variational Inference (CVI) for varying sigma^2
-#'
-#' @param N number of observed data
-#' @param D dimension of each observed data
-#' @param T0 total clusters fixed for the variational distribution
-#' @param s1 shape parameter for the prior distribution of alpha
-#' @param s2 rate parameter for the prior distribution of alpha
-#' @param L20 precision parameter for the prior distribution of eta_i's
-#' @param b1 shape parameter for prior distribution of sigma^2
-#' @param b2 rate parameter for prior distribution of sigma^2
-#' @param X the observed data, N x D matrix
-#' @param W1 shape parameter for the posterior distribution of alpha
-#' @param W2 rate parameter for the posterior distribution of alpha
-#' @param L1 1st parameter for the posterior distribution of eta_i's
-#' @param L2 Precision parameter for the posterior distribution of eta_i's
-#' @param G1 shape parameter for the posterior distribution of sigma^2
-#' @param G2 rate parameter for the posterior distribution of sigma^2
-#' @param Plog Latent probability values
-#' @param maxit Maximum number of iterations the updates are run
-#'
-#' @return the posterior value of alpha, sigma^2, the number of clusters from
-#' latent allocation probability, the proportions of each cluster and the
-#' latent allocation probability matrix
-#' @export
-#'
-#' @examples CVI_sigma(N = 100, D = 2, T0 = 10, s1 = 0.01, s2 = 0.01,
-#'              L20 = 0.01, b1 = 0.01, b2 = 0.01,
-#'              X = matrix(c(rep(0, 50), rep(10, 50), rep(0, 50), rep(10, 50)),
-#'                  nrow = 100, ncol = 2),
-#'              W1 = 0.01, W2 = 0.01, L1 = matrix(0.01, nrow = 10, ncol = 2),
-#'              L2 = matrix(0.01, nrow = 10, ncol = 1), G1 = 0.01, G2 = 0.01,
-#'              Plog = matrix(-3, nrow = 100, ncol = 10), maxit = 1000)
-CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
+CVI_sigma1 <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
                       Plog, maxit){
   #the mean vector of the parameters eta_i
   Mu0 <- matrix(c(rep(0,D)), nrow=1)
   #the covariance matrix of the parameters eta_i
-  C00 <- diag(D)/L20
+  C00 <- sweep(diag(D), 1, L20, "/")
   Mu00 <- Mu0%*%solve(C00)
   #store the output of ELBO function for every iteration of updates
   f <- list()
-  f[[1]] <- ELBO_sigma(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
+  f[[1]] <- ELBO_sigma1(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
                        Plog)
 
   for (m in 1:maxit){
     #updating the latent probability values
     P0 <- exp(Plog)
     #different updates for i = 1, i = {2, ..., T0-1} and i = T0
-    L21 <- sweep(L1, 1, L2, "/")
-    P230 <- (G1/G2)*L21 %*% t(X)
-    P231 <- diag(-0.5*(G1/G2)*L21 %*% t(L21)) - 0.5*D*(G1/G2)/L2
-    P232 <- (G1/G2)*diag(X %*% t(X))
+    L21 <- L1/L2
+    P230 <- sweep(L21, 2, (G1/G2), "*") %*% t(X)
+    P231 <- rowSums(sweep((L21^2 + 1/L2), 2 , (G1/G2), "*"))
+    P232 <- rowSums(sweep(X^2, 2, (G1/G2), "*"))
     for (n in 1:N){
       #update of the n^th vector is done by considering all the vecors except
       #the n^th one
@@ -69,7 +37,7 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
       P22 <- c(0, cumsum(P21)[1:(T0-1)])
 
       P2 <- P20 + P22 + P230[,n] + P231 -
-        0.5*(P232[n] + D*log(2*pi) - D*(digamma(G1) - log(G2)))
+        0.5*(P232[n] + D*log(2*pi) - sum(digamma(G1) - log(G2)))
       #log-sum-exp trick
       p0 <- max(P2)
       Plog[n,] <- P2 - p0 - log(sum(exp(P2 - p0)))
@@ -80,18 +48,22 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
       #update of the 1st parameter vector of eta_i
       L1[i,] <- Mu00 + (G1/G2)*t(Pf0[, i, drop=FALSE])%*%X
       #update of the 2nd parameter value of eta_i
-      L2[i, 1] <- L20 + (G1/G2)*sum(Pf0[, i])
+      L2[i,] <- L20 + (G1/G2)*sum(Pf0[, i])
     }
 
-    L21 <- sweep(L1, 1, L2, "/")
+    L21 <- L1/L2
     #update of the shape parameter of sigma^2
-    G1 <- b1 + 0.5*D*sum(Pf0)
-    #update of the rate parameter of sigma^2
-    G20 <- sweep(Pf0, 1, 0.5*diag(X %*% t(X)), "*")
-    G21 <- Pf0*t(- L21 %*% t(X))
-    G22 <- sweep(Pf0, 2, 0.5*diag(L21 %*% t(L21)), "*")
-    G23 <- sweep(Pf0, 2, 0.5*D/L2, "*")
-    G2 <- b2 + sum(G20) + sum(G21) + sum(G22) + sum(G23)
+    G1 <- b1 + 0.5*sum(Pf0)
+    G20 <- 0.5*colSums(sweep(X^2, 1, rowSums(Pf0), "*"))
+    #G21 <- -diag(t(L21) %*% t(Pf0) %*% X)
+    G21 <- rep(0, D)
+    for (n in 1:N){
+      for (i in 1:T0){
+        G21 <- G21 + Pf0[n,i]*(L21[i,, drop=FALSE] * X[n,, drop=FALSE])
+      }
+    }
+    G22 <- 0.5*colSums(sweep((L21^2 + 1/L2), 1, colSums(Pf0), "*"))
+    G2 <- b2 + G20 - G21 + G22
 
     Csum <- colsums(Pf0)
     ord <- order(Csum, decreasing = TRUE)
@@ -124,7 +96,12 @@ CVI_sigma <- function(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1, G2,
     }
     W2 <- s2  + W2f
 
-    f[[m+1]] <- ELBO_sigma(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1,
+    # PP[[m]] = Pf0
+    # alpha0[m] <- W1/W2
+    # sigma0[[m]] <- G1/G2
+    # c1[[m]] <- table(apply(log(Pf0), MARGIN = 1, FUN=which.max))
+    # cl[m] <- length(unique(c1[[m]]))
+    f[[m+1]] <- ELBO_sigma1(N, D, T0, s1, s2, L20, b1, b2, X, W1, W2, L1, L2, G1,
                            G2, Plog)
     if (abs(sum(f[[m]]) - sum(f[[m + 1]])) < 0.000001){
       break
