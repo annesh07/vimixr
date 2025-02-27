@@ -47,6 +47,7 @@ CVI_alpha_eta_covfunction <- function(Plog, type, params){
       L2[i, 1] <- L20 + sum(P[, i])
     }
 
+    params$W1 <- W1
     return(c("W1"=W1, "W2"=W2, "L1"=L1, "L2"=L2))
 
   } else if (type == "fixed-matrix"){
