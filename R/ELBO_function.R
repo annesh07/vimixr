@@ -415,3 +415,4 @@ ELBO_function <- function(type, params){
     return(c("e0"=e0, "e1"=e1, "e2"=e2, "e3"=e3, "me4"=-e4))
   }
 }
+#add return statement at the end
