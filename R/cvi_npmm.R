@@ -2,14 +2,12 @@
 #'
 #' @details The following models are supported in \code{vimixr}, listing their
 #' required input arguments in \code{...} when calling \code{cvi_npmm()}: \itemize{
-#'  \item{Known covariance}{\itemize{
-#'        \item{diagonal covariance: }{we need the additional arguments \itemize{
-#'            \item{\code{cov_data}: }{a scalar}
+#'  \item \strong{Known covariance} \itemize{
+#'        \item \emph{diagonal covariance} We need the followingadditional arguments: \describe{
+#'            \item{\code{cov_data}: a scalar}{}
 #'            }
 #'          }
-#'        }
-#'  \item{Unknown covariance}{Stuff}
-#' }
+#'  \item \strong{Unknown covariance}
 #' }
 #'
 #' @param X input data as a matrix
@@ -32,6 +30,11 @@
 #' @export
 #'
 #' @examples
+#'
+#' X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
+#'            matrix(rnorm(100, m=3, sd=0.5), ncol=2)
+#'            )
+#' cvi_npmm(X, fixed_variance=TRUE)
 #'
 #'
 cvi_npmm <- function(X, variational_params,
