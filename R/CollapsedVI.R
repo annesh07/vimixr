@@ -1,6 +1,18 @@
-#' Title
+#' Collapsed variational inference for non-parametric Bayesian mixture models
 #'
-#' @param Data
+#' @details The following models are supported in \code{vimixr}, listing their
+#' required input arguments in \code{...} when calling \code{cvi_npmm()}: \itemize{
+#'  \item{Known covariance}{\itemize{
+#'        \item{diagonal covariance: }{we need the additional arguments \itemize{
+#'            \item{\code{cov_data}: }{a scalar}
+#'            }
+#'          }
+#'        }
+#'  \item{Unknown covariance}{Stuff}
+#' }
+#' }
+#'
+#' @param X input data as a matrix
 #' @param variational_params
 #' @param prior_shape_alpha
 #' @param prior_rate_alpha
@@ -9,29 +21,33 @@
 #' @param prior_mean_eta
 #' @param post_mean_eta
 #' @param log_prob_matrix
-#' @param maxit
+#' @param maxit maximum number of iterations. Default is 100
 #' @param type
-#' @param params
+#' @param ... additional paremeters for specific models. See Details below.
 #'
 #' @returns
+#'
+#' @importFrom Rfast rowsums colsums spdinv
+#'
 #' @export
 #'
 #' @examples
-CollapsedVI <- function(Data, variational_params,
-                        prior_shape_alpha, prior_rate_alpha,
-                        post_shape_alpha, post_rate_alpha,
-                        prior_mean_eta, post_mean_eta,
-                        log_prob_matrix,
-                        prior_scale_d_cs_cov=NULL,
-                        maxit,
-                        fixed_variance=FALSE, covariance_type="diagonal",
-                        cluster_specific_covariance=TRUE,
-                        variance_prior_type=c("IW", "decomposed", "sparse",
-                                              "off-diagonal normal")){
-  library("Rfast")
-  X <- Data
-  N <- dim(X)[1] #number of samples
-  D <- dim(X)[2]
+#'
+#'
+cvi_npmm <- function(X, variational_params,
+                     prior_shape_alpha, prior_rate_alpha,
+                     post_shape_alpha, post_rate_alpha,
+                     prior_mean_eta, post_mean_eta,
+                     log_prob_matrix,
+                     maxit = 100,
+                     fixed_variance=FALSE, covariance_type="diagonal",
+                     cluster_specific_covariance=TRUE,
+                     variance_prior_type=c("IW", "decomposed", "sparse",
+                                           "off-diagonal normal"),
+                     ...){
+
+  N <- nrow(X) #number of samples
+  D <- ncol(X) # number of variables
   T0 <- variational_params
 
   params <- list()
@@ -53,6 +69,9 @@ CollapsedVI <- function(Data, variational_params,
       params$prior_precision_scalar_eta <- prior_precision_scalar_eta
       params$post_precision_scalar_eta <- post_precision_scalar_eta
       params$cov_data <- cov_data
+      params_check(params, fixed_variance, covariance_type,
+                   cluster_specific_covariance,
+                   variance_prior_type)
 
       C00 <- diag(D)/prior_precision_scalar_eta #covariance of DP mean parameters
       inverts[["inv_C0"]] <- Rfast::spdinv(cov_data)
@@ -150,10 +169,9 @@ CollapsedVI <- function(Data, variational_params,
         }
       }
 
-
-    } else {
-      stop("covariance_type can only be either 'diagonal' or 'full'.")
     }
+  } else {
+    stop("covariance_type can only be either 'diagonal' or 'full'.")
   }
 
 
@@ -184,8 +202,8 @@ CollapsedVI <- function(Data, variational_params,
     params <- updated_params
 
     elbo_values[[m+1]] <- ELBO_function(fixed_variance, covariance_type,
-                                     cluster_specific_covariance,
-                                     variance_prior_type, X, inverts, params)
+                                        cluster_specific_covariance,
+                                        variance_prior_type, X, inverts, params)
 
     if (abs(sum(elbo_values[[m]]) - sum(elbo_values[[m + 1]])) < 0.000001 ){
       break

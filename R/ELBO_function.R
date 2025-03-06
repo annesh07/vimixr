@@ -9,7 +9,7 @@
 #' estimated clusters or is cluster specific. Default is \code{TRUE} which means it is cluster specific.
 #' @param variance_prior_type character string specifying the type of prior distribution
 #' for the covariance when cluster_specific_covariance is \code{TRUE}.
-#' Can be either \code{"IW"} or \code{"decomposed} if \code{cluster_specific_covariance} is \code{FALSE},
+#' Can be either \code{"IW"} or \code{"decomposed"} if \code{cluster_specific_covariance} is \code{FALSE},
 #' and can be either \code{"IW"}, \code{"sparse"} or \code{"off-diagonal normal"} otherwise.
 #' @param params a list
 #'
@@ -143,10 +143,9 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
         }
       }
 
-
-    } else {
-      stop("covariance_type can only be either 'diagonal' or 'full'.")
     }
+  } else {
+    stop("covariance_type can only be either 'diagonal' or 'full'.")
   }
 
   return("ELBO" = out)

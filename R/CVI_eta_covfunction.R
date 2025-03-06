@@ -122,7 +122,7 @@ CVI_eta_covfunction <- function(fixed_variance = FALSE,
           }
           for (i in 1:T0){
             V1 <- V1 + RP[i]*(crossprod(L21[i,, drop = FALSE])) +
-                                  Rfast::spdinv(L2[,,i])
+              Rfast::spdinv(L2[,,i])
           }
           V <- Rfast::spdinv(V1)
 
@@ -310,11 +310,11 @@ CVI_eta_covfunction <- function(fixed_variance = FALSE,
           stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
                when 'cluster_specific_covariance' is TRUE")
         }
-      }
 
-    } else {
-      stop("covariance_type can only be either 'diagonal' or 'full'.")
+      }
     }
+  } else {
+    stop("covariance_type can only be either 'diagonal' or 'full'.")
   }
 
   return(out)

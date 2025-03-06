@@ -1,10 +1,10 @@
 CVI_update_function <- function(fixed_variance = FALSE,
-                                   covariance_type = "diagonal",
-                                   cluster_specific_covariance = TRUE,
-                                   variance_prior_type = c("IW", "decomposed",
-                                                           "sparse",
-                                                           "off-diagonal normal"),
-                                   X, inverts, params){
+                                covariance_type = "diagonal",
+                                cluster_specific_covariance = TRUE,
+                                variance_prior_type = c("IW", "decomposed",
+                                                        "sparse",
+                                                        "off-diagonal normal"),
+                                X, inverts, params){
 
   s1 <- params$prior_shape_alpha #shape parameter for alpha prior
   s2 <- params$prior_rate_alpha  #rate parameter for alpha prior
@@ -538,10 +538,9 @@ CVI_update_function <- function(fixed_variance = FALSE,
                when 'cluster_specific_covariance' is TRUE")
         }
       }
-
-    } else {
-      stop("covariance_type can only be either 'diagonal' or 'full'.")
     }
+  } else {
+    stop("covariance_type can only be either 'diagonal' or 'full'.")
   }
 
   params <- out
