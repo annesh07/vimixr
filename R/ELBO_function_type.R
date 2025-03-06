@@ -9,7 +9,7 @@ elbo_fixed_diagonal <- function(X, inverts, params){
 
   #the eta's
   L21 <- sweep(L1, 1, L2, "/")
-  e20 <- diag(-0.5 * L21 %*% tcrossprod(inv_C00, L21))
+  e20 <- -0.5*quadratic_form_diag(L21, inv_C00) #diag(-0.5 * L21 %*% tcrossprod(inv_C00, L21))
   e21 <- -0.5 * (D * L20)/L2
   e22 <- Mu0 %*% tcrossprod(inv_C00, L21)
   e2 <-  T0 * (-D/2 * log(2 * pi) + D * 0.5 * log(L20) - 0.5 * Mu0 %*% tcrossprod(inv_C00, Mu0)) +
