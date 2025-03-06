@@ -35,7 +35,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
   W1 <- params[["W1"]] #posterior shape1 parameter for alpha
   W2 <- params[["W2"]] #posterior shape2 parameter for alpha
 
-  Plog <- params[["Plog"]] #log of posterior probability allocation matrix
+  Plog <- params[["log_prob_matrix"]] #log of posterior probability allocation matrix
   P <- params[["P"]]
   RP <- Rfast::colsums(P)
 
