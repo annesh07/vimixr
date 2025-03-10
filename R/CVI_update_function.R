@@ -49,13 +49,13 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
       inv_C0 <- inverts[["inv_C0"]] #inverse of C0
       inv_C00 <- inverts[["inv_C00"]] #inverse of covariance of DP mean parameters
-      Mu00 <- Mu0%*%inv_C00
+      Mu00 <- Rfast::mat.mult(Mu0, inv_C00)
 
       L21 <- sweep(L1, 1, L2, "/")
-      P230 <- X %*% tcrossprod(inv_C0, L21)
-      P231 <- diag(-0.5*L21 %*% tcrossprod(inv_C0, L21))
+      P230 <- Rfast:mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
+      P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
       P232 <- - 0.5*sum(diag(inv_C0))/L2
-      P233 <- diag(-0.5*X %*% tcrossprod(inv_C0, X))
+      P233 <- - 0.5*quadratic_form_diag(X, inv_C0)
       P_const <- -0.5*(D*log(2*pi) - determinant(inv_C0, logarithm = TRUE)$modulus)
       #log probability matrix update
       Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
@@ -67,7 +67,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
       #updated parameters of eta's
       for (i in 1:T0){
-        L1[i,] <- Mu00 + crossprod(P[, i, drop=FALSE], X) %*% inv_C0
+        L1[i,] <- Mu00 + Rfast::mat.mult(Rfast::Crossprod(P[, i, drop=FALSE], X),
+                                         inv_C0)
         L2[i, 1] <- L20 + sum(P[, i])
       }
 
@@ -87,13 +88,13 @@ CVI_update_function <- function(fixed_variance = FALSE,
       L20 <- params$prior_precision_scalar_eta
 
       inv_C00 <- inverts[["inv_C00"]] #inverse of covariance of DP mean parameters
-      Mu00 <- Mu0%*%inv_C00
+      Mu00 <- Rfast::mat.mult(Mu0, inv_C00)
 
       L21 <- sweep(L1, 1, L2, "/")
-      P230 <- (G1/G2)*tcrossprod(X, L21)
-      P231 <- diag(-0.5*(G1/G2)*tcrossprod(L21))
+      P230 <- (G1/G2)*Rfast::Tcrossprod(X, L21)
+      P231 <- diag(-0.5*(G1/G2)*Rfast::Tcrossprod(L21))
       P232 <- - 0.5*D*(G1/G2)/L2
-      P233 <- -0.5*(G1/G2)*diag(tcrossprod(X))
+      P233 <- -0.5*(G1/G2)*diag(Rfast::Tcrossprod(X))
       P_const <- - 0.5*(D*log(2*pi) - D*(digamma(G1) - log(G2)))
       #log probability matrix update
       Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
@@ -105,16 +106,16 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
       #update of parameters of eta's
       for (i in 1:T0){
-        L1[i,] <- Mu00 + (G1/G2)*crossprod(P[, i, drop=FALSE], X)
+        L1[i,] <- Mu00 + (G1/G2)*Rfast::Crossprod(P[, i, drop=FALSE], X)
         L2[i, 1] <- L20 + (G1/G2)*sum(P[, i])
       }
       L21 <- sweep(L1, 1, L2, "/")
 
       #updated parameters of the scalar multiple of the data covariance matrix
       G1 <- b1 + 0.5*D*sum(P)
-      G20 <- sweep(P, 1, 0.5*diag(tcrossprod(X)), "*")
-      G21 <- P*t(- tcrossprod(L21, X))
-      G22 <- sweep(P, 2, 0.5*diag(tcrossprod(L21)), "*")
+      G20 <- sweep(P, 1, 0.5*diag(Rfast::Tcrossprod(X)), "*")
+      G21 <- P*t(- Rfast::Tcrossprod(L21, X))
+      G22 <- sweep(P, 2, 0.5*diag(Rfast::Tcrossprod(L21)), "*")
       G23 <- sweep(P, 2, 0.5*D/L2, "*")
       G2 <- b2 + sum(G20) + sum(G21) + sum(G22) + sum(G23)
 
@@ -135,17 +136,17 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
       inv_C0 <- inverts[["inv_C0"]]      #inverse of C0
       inv_C00 <- inverts[["inv_C00"]] #inverse of covariance of DP mean parameters
-      Mu00 <- Mu0%*%inv_C00
+      Mu00 <- Rfast::mat.mult(Mu0, inv_C00)
 
       L21 <- matrix(0, nrow = T0, ncol = D)
       for (i in 1:T0){
-        L21[i,] = L1[i,, drop = FALSE] %*% L2[,,i]
+        L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
       }
 
-      P230 <- X %*% tcrossprod(inv_C0, L21)
-      P231 <- -0.5*diag(L21 %*% tcrossprod(inv_C0, L21))
+      P230 <- Rfast:mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
+      P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
       P232 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
-      P233 <- -0.5*diag(X %*% tcrossprod(inv_C0, X))
+      P233 <- - 0.5*quadratic_form_diag(X, inv_C0)
       P_const <- -0.5*(D*log(2*pi) - determinant(inv_C0, logarithm = TRUE)$modulus)
       #log probability matrix update
       Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
@@ -157,7 +158,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
       #updated parameters of eta's
       for (i in 1:T0){
-        L1[i,] <- Mu00 + crossprod(P[, i, drop=FALSE], X) %*% inv_C0
+        L1[i,] <- Mu00 + Rfast::mat.mult(Rfast::Crossprod(P[, i, drop=FALSE], X),
+                                         inv_C0)
         L2[,,i] <- Rfast::spdinv(inv_C00 + sum(P[, i])*(inv_C0))
       }
 
@@ -180,16 +182,16 @@ CVI_update_function <- function(fixed_variance = FALSE,
           inv_C0 <- nu*V           #expected inverse of C0; covariance matrix of data
           inv_V0 <- inverts[["inv_V0"]] #inverse of prior scale matrix of C0_1
           inv_C00 <- inverts[["inv_C00"]] #inverse of covariance of DP mean parameters
-          Mu00 <- Mu0%*%inv_C00
+          Mu00 <- Rfast::mat.mult(Mu0, inv_C00)
 
           L21 <- matrix(0, nrow = T0, ncol = D)
           for (i in 1:T0){
-            L21[i,] = L1[i,, drop = FALSE] %*% L2[,,i]
+            L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
           }
-          P230 <- X %*% tcrossprod(inv_C0, L21)
-          P231 <- diag(-0.5*L21 %*% tcrossprod(inv_C0, L21))
+          P230 <- Rfast:mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
+          P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
           P232 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
-          P233 <- -0.5*diag(X %*% tcrossprod(inv_C0, X))
+          P233 <- - 0.5*quadratic_form_diag(X, inv_C0)
           P_const <- -0.5*(D*log(2*pi) - (sum(digamma(0.5*(nu + 1 - c(1:D)))) +
                                             D*log(2) +
                                             determinant(V, logarithm = TRUE)$modulus))
@@ -205,25 +207,26 @@ CVI_update_function <- function(fixed_variance = FALSE,
           #updated parameters of eta's
           L21 <- matrix(0, nrow = T0, ncol = D)
           for (i in 1:T0){
-            L1[i,] <- Mu00 + crossprod(P[, i, drop=FALSE], X) %*% inv_C0
+            L1[i,] <- Mu00 + Rfast::mat.mult(Rfast::Crossprod(P[, i, drop=FALSE],
+                                                              X), inv_C0)
             L2[,,i] <- Rfast::spdinv(inv_C00 + sum(P[, i])*inv_C0)
-            L21[i,] = L1[i,, drop = FALSE] %*% L2[,,i]
+            L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
           }
 
           #updated parameters of C0
           nu <- nu0 + sum(P)
           V1 <- inv_V0
           for (n in 1:N){
-            V1 <- V1 + CP[n]*crossprod(X[n,, drop = FALSE])
+            V1 <- V1 + CP[n]*Rfast::Crossprod(X[n,, drop = FALSE])
           }
           for (n in 1:N){
             for (i in 1:T0){
-              V1 <- V1 - P[n,i]*2*crossprod(X[n,, drop = FALSE],
+              V1 <- V1 - P[n,i]*2*Rfast::Crossprod(X[n,, drop = FALSE],
                                             L21[i,, drop = FALSE])
             }
           }
           for (i in 1:T0){
-            V1 <- V1 + RP[i]*(crossprod(L21[i,, drop = FALSE])) +
+            V1 <- V1 + RP[i]*(Rfast::Crossprod(L21[i,, drop = FALSE])) +
               Rfast::spdinv(L2[,,i])
           }
           V <- Rfast::spdinv(V1)
@@ -249,7 +252,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           L2 <- params$post_cov_eta
 
           inv_C00 <- inverts[["inv_C00"]] #inverse of covariance of DP mean parameters
-          Mu00 <- Mu0%*%inv_C00
+          Mu00 <- Rfast::mat.mult(Mu0, inv_C00)
 
           mean_lower <- matrix(0, nrow = D, ncol = D) #mean matrix of the decomposed
           mean_lower[lower.tri(mean_lower, diag = FALSE)] <- mu1
@@ -258,16 +261,16 @@ CVI_update_function <- function(fixed_variance = FALSE,
           mean_L <- mean_lower + diag(sqrt(1/b1)*sqrt(pi)/beta(a1,0.5))
           diag(sigma_lower) <- (1/b1)*(a1 - (sqrt(pi)/beta(a1,0.5))^2)
           #expected inverse of C0; covariance matrix of data
-          inv_C0 <- mean_L %*% t(mean_L) + diag(rowsums(sigma_lower))
+          inv_C0 <- Rfast::Tcrossprod(mean_L) + diag(rowsums(sigma_lower))
 
           L21 <- matrix(0, nrow = T0, ncol = D)
           for (i in 1:T0){
-            L21[i,] = L1[i,, drop = FALSE] %*% L2[,,i]
+            L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
           }
-          P230 <- X %*% tcrossprod(inv_C0, L21)
-          P231 <- diag(-0.5*L21 %*% tcrossprod(inv_C0, L21))
+          P230 <- Rfast:mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
+          P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
           P232 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
-          P233 <- -0.5*diag(X %*% tcrossprod(inv_C0, X))
+          P233 <- - 0.5*quadratic_form_diag(X, inv_C0)
           P_const <- -0.5*(D*log(2*pi) - sum(digamma(a1) - log(b1)))
           #log probability matrix update
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
@@ -280,9 +283,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           #update for eta_i's
           L21 <- matrix(0, nrow = T0, ncol = D)
           for (i in 1:T0){
-            L1[i,] <- Mu00 + crossprod(P[, i, drop=FALSE], X) %*% inv_C0
+            L1[i,] <- Mu00 + Rfast::mat.mult(Rfast::Crossprod(P[, i, drop=FALSE],
+                                                              X), inv_C0)
             L2[,,i] <- Rfast::spdinv(inv_C00 + sum(P[, i])*(inv_C0))
-            L21[i,] = L1[i,, drop = FALSE] %*% L2[,,i]
+            L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
           }
 
 
@@ -376,16 +380,19 @@ CVI_update_function <- function(fixed_variance = FALSE,
           P233 <- matrix(0, nrow = N, ncol = T0)
           for (n in 1:N){
             for (i in 1:T0){
-              P233[n,i] <- -0.5*X[n,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                                X[n,,drop=FALSE])
-              P230[n,i] <- L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                            X[n,,drop=FALSE])
+              P233[n,i] <- -0.5*Rfast::mat.mult(X[n,,drop=FALSE],
+                                                Rfast::Tcrossprod(inv_C0[,,i],
+                                                                  X[n,,drop=FALSE]))
+              P230[n,i] <- Rfast::mat.mult(L1[i,,drop=FALSE],
+                                           Rfast::Tcrossprod(inv_C0[,,i],
+                                                            X[n,,drop=FALSE]))
             }
           }
           P231 <- matrix(0, nrow = 1, ncol = T0)
           for (i in 1:T0){
-            P231[1,i] <- -0.5*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                               L1[i,,drop=FALSE])
+            P231[1,i] <- -0.5*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                              Rfast::Tcrossprod(inv_C0[,,i],
+                                                                L1[i,,drop=FALSE]))
           }
           P232 <- 0.5*E_log_C0
           P_const <- -0.5*D*(log(2*pi) + 1/(1/k0 + RP))
@@ -401,9 +408,9 @@ CVI_update_function <- function(fixed_variance = FALSE,
           for (i in 1:T0){
             V1[,,i] <- matrix(0, D, D)
             for (n in 1:N){
-              V1[,,i] <- V1[,,i] + P[n,i]*crossprod(X[n,,drop=FALSE])
+              V1[,,i] <- V1[,,i] + P[n,i]*Rfast::Crossprod(X[n,,drop=FALSE])
             }
-            V1[,,i] <- V0 + (1/k0)*crossprod(Mu0) + V1[,,i] + diag(1e-6, D)
+            V1[,,i] <- V0 + (1/k0)*Rfast::Crossprod(Mu0) + V1[,,i] + diag(1e-6, D)
             L1[i,] <- (Mu0/k0 + colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
           }
 
@@ -435,17 +442,20 @@ CVI_update_function <- function(fixed_variance = FALSE,
           P233 <- matrix(0, nrow = N, ncol = T0)
           for (n in 1:N){
             for (i in 1:T0){
-              P233[n,i] <- -0.5*X[n,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                                X[n,,drop=FALSE])
-              P230[n,i] <- L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                            X[n,,drop=FALSE])
+              P233[n,i] <- -0.5*Rfast::mat.mult(X[n,,drop=FALSE],
+                                                Rfast::Tcrossprod(inv_C0[,,i],
+                                                                  X[n,,drop=FALSE]))
+              P230[n,i] <- Rfast::mat.mult(L1[i,,drop=FALSE],
+                                           Rfast::Tcrossprod(inv_C0[,,i],
+                                                             X[n,,drop=FALSE]))
             }
           }
           P231 <- matrix(0, nrow = 1, ncol = T0)
           P232 <- P231
           for (i in 1:T0){
-            P231[1,i] <- -0.5*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                               L1[i,,drop=FALSE])
+            P231[1,i] <- -0.5*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                              Rfast::Tcrossprod(inv_C0[,,i],
+                                                                L1[i,,drop=FALSE]))
             P232[1,i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
           }
           P_const <- -0.5*D*(log(2*pi) + 1/(1/k0 + RP))
@@ -460,7 +470,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
           for (i in 1:T0){
             B1[i,] <- b0 + Rfast::colsums(sweep(X^2, 1, P[,i], "*"))
-            C01 <- 1/c0 + 0.5*abs(crossprod(sweep(X, 1, P[,i], "*"), X))
+            C01 <- 1/c0 + 0.5*abs(Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X))
             C1[,,i] <- Diag.fill(1/C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
                          Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
@@ -494,17 +504,20 @@ CVI_update_function <- function(fixed_variance = FALSE,
           P233 <- matrix(0, nrow = N, ncol = T0)
           for (n in 1:N){
             for (i in 1:T0){
-              P233[n,i] <- -0.5*X[n,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                                X[n,,drop=FALSE])
-              P230[n,i] <- L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                            X[n,,drop=FALSE])
+              P233[n,i] <- -0.5*Rfast::mat.mult(X[n,,drop=FALSE],
+                                                Rfast::Tcrossprod(inv_C0[,,i],
+                                                                  X[n,,drop=FALSE]))
+              P230[n,i] <- Rfast::mat.mult(L1[i,,drop=FALSE],
+                                           Rfast::Tcrossprod(inv_C0[,,i],
+                                                             X[n,,drop=FALSE]))
             }
           }
           P231 <- matrix(0, nrow = 1, ncol = T0)
           P232 <- P231
           for (i in 1:T0){
-            P231[1,i] <- -0.5*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                               L1[i,,drop=FALSE])
+            P231[1,i] <- -0.5*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                              Rfast::Tcrossprod(inv_C0[,,i],
+                                                                L1[i,,drop=FALSE]))
             P232[1,i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
           }
           P_const <- -0.5*D*(log(2*pi) + 1/(1/k0 + RP))
@@ -519,7 +532,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
           for (i in 1:T0){
             B1[i,] <- b0 + Rfast::colsums(sweep(X^2, 1, P[,i], "*"))
-            C01 <- 0.5*(crossprod(sweep(X, 1, P[,i], "*"), X))
+            C01 <- 0.5*(Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X))
             C1[,,i] <- Diag.fill(C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
                          Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])

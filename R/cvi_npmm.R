@@ -20,12 +20,28 @@
 #' @param post_mean_eta
 #' @param log_prob_matrix
 #' @param maxit maximum number of iterations. Default is 100
-#' @param type
+#' @param fixed_variance covariance matrix of the data is considered known (fixed)
+#' or unknown. Default is FALSE
+#' @param covariance_type covariance matrix is considered diagonal or full.
+#' Default is 'full'
+#' @param cluster_specific_covariance covariance matrix is specific to a cluster
+#' allocation or it is same over all cluster choices. Default is TRUE
+#' @param variance_prior_type For unknown and full covariance matrix, choice of
+#' matrix prior is either Inverse-Wishart ('IW') or Cholesky-decomposed
+#' ('decomposed'). For unknown, full and cluster-specific covariance matrix,
+#' choice of matrix prior is either Inverse-Wishart ('IW'), element-wise Gamma
+#' and Laplace distributed ('sparse') or element-wise Gamma and Normal
+#' distributed ('off-diagonal normal')
 #' @param ... additional paremeters for specific models. See Details below.
 #'
-#' @returns
+#' @returns Posterior DP concentration parameter ('alpha'),
+#' Posterior number of clusters ('Cluster number'),
+#' Posterior proportions of clusters ('Cluster Proportion'),
+#' Posterior logarithm of cluster allocation matrix ('log Probability matrix')
+#' and Optimisation of the ELBO function ('ELBO')
 #'
-#' @importFrom Rfast rowsums colsums spdinv
+#' @importFrom Rfast rowsums colsums spdinv Crossprod Tcrossprod mat.mult
+#' Diag.fill Diag.matrix
 #'
 #' @export
 #'
@@ -43,7 +59,7 @@ cvi_npmm <- function(X, variational_params,
                      prior_mean_eta, post_mean_eta,
                      log_prob_matrix,
                      maxit = 100,
-                     fixed_variance=FALSE, covariance_type="diagonal",
+                     fixed_variance=FALSE, covariance_type="full",
                      cluster_specific_covariance=TRUE,
                      variance_prior_type=c("IW", "decomposed", "sparse",
                                            "off-diagonal normal"),
@@ -66,6 +82,7 @@ cvi_npmm <- function(X, variational_params,
   params$P <- exp(log_prob_matrix)
   RP <- colsums(params$P)
 
+  #updating the parameter list based on the conditions
   if(covariance_type == "diagonal") {
 
     if(fixed_variance) {
@@ -87,6 +104,9 @@ cvi_npmm <- function(X, variational_params,
       params$post_rate_scalar_cov <- post_rate_scalar_cov
       params$post_precision_scalar_eta <- post_precision_scalar_eta
       params$prior_precision_scalar_eta <- prior_precision_scalar_eta
+      params_check(params, fixed_variance, covariance_type,
+                   cluster_specific_covariance,
+                   variance_prior_type)
 
       C00 <- diag(D)/prior_precision_scalar_eta #covariance of DP mean parameters
       inverts[["inv_C00"]] <- Rfast::spdinv(C00)
@@ -99,6 +119,9 @@ cvi_npmm <- function(X, variational_params,
       params$post_cov_eta <- post_cov_eta
       params$cov_data <- cov_data
       params$prior_cov_eta <- prior_cov_eta
+      params_check(params, fixed_variance, covariance_type,
+                   cluster_specific_covariance,
+                   variance_prior_type)
 
       inverts[["inv_C0"]] <- Rfast::spdinv(cov_data)
       inverts[["inv_C00"]] <- Rfast::spdinv(prior_cov_eta)
@@ -113,6 +136,9 @@ cvi_npmm <- function(X, variational_params,
           params$post_scale_cov <- post_scale_cov
           params$post_cov_eta <- post_cov_eta
           params$prior_cov_eta <- prior_cov_eta
+          params_check(params, fixed_variance, covariance_type,
+                       cluster_specific_covariance,
+                       variance_prior_type)
 
           inverts[["inv_V0"]] <- Rfast::spdinv(prior_scale_cov)
           inverts[["inv_C00"]] <- Rfast::spdinv(prior_cov_eta)
@@ -129,6 +155,9 @@ cvi_npmm <- function(X, variational_params,
           params$post_var_offdiag_decomp <- post_var_offdiag_decomp
           params$post_cov_eta <- post_cov_eta
           params$prior_cov_eta <- prior_cov_eta
+          params_check(params, fixed_variance, covariance_type,
+                       cluster_specific_covariance,
+                       variance_prior_type)
 
           inverts[["inv_C00"]] <- Rfast::spdinv(prior_cov_eta)
 
@@ -145,6 +174,9 @@ cvi_npmm <- function(X, variational_params,
           params$post_df_cs_cov <- post_df_cs_cov
           params$post_scale_cs_cov <- post_scale_cs_cov
           params$scaling_cov_eta <- scaling_cov_eta
+          params_check(params, fixed_variance, covariance_type,
+                       cluster_specific_covariance,
+                       variance_prior_type)
 
 
         } else if (variance_prior_type == "sparse"){
@@ -155,6 +187,9 @@ cvi_npmm <- function(X, variational_params,
           params$post_rate_d_cs_cov <- post_rate_d_cs_cov
           params$post_var_offd_cs_cov <- post_var_offd_cs_cov
           params$scaling_cov_eta <- scaling_cov_eta
+          params_check(params, fixed_variance, covariance_type,
+                       cluster_specific_covariance,
+                       variance_prior_type)
 
 
         } else if (variance_prior_type == "off-diagonal normal"){
@@ -164,6 +199,9 @@ cvi_npmm <- function(X, variational_params,
           params$post_rate_d_cs_cov <- post_rate_d_cs_cov
           params$post_mean_offd_cs_cov <- post_mean_offd_cs_cov
           params$scaling_cov_eta <- scaling_cov_eta
+          params_check(params, fixed_variance, covariance_type,
+                       cluster_specific_covariance,
+                       variance_prior_type)
 
 
         } else {
@@ -175,18 +213,6 @@ cvi_npmm <- function(X, variational_params,
     }
   } else {
     stop("covariance_type can only be either 'diagonal' or 'full'.")
-  }
-
-
-  if(fixed_variance){
-
-  }else{
-    if(cluster_specific_covariance){
-      if(variance_prior_type == "off-diagonal normal"){
-        stopifnot(!is.null(prior_scale_d_cs_cov))
-        params$prior_scale_d_cs_cov <- prior_scale_d_cs_cov
-      }
-    }
   }
 
   #store the output of ELBO function for every iteration of updates
