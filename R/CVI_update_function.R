@@ -1,3 +1,28 @@
+#' Update of the variational parameters
+#'
+#' @param fixed_variance whether the covariance is fixed or estimated.
+#' Default is \code{FALSE} which means it is estimated.
+#' @param covariance_type The assumed type of the covariance matrix.
+#' Can be either \code{"diagonal"} if it is the identify multiplied by a scalar,
+#' or \code{"full"} for a fully unspecified covariance matrix.
+#' @param cluster_specific_covariance whether the the covariance is shared across
+#' estimated clusters or is cluster specific. Default is \code{TRUE} which means it is cluster specific.
+#' @param variance_prior_type character string specifying the type of prior distribution
+#' for the covariance when cluster_specific_covariance is \code{TRUE}.
+#' Can be either \code{"IW"} or \code{"decomposed"} if \code{cluster_specific_covariance} is \code{FALSE},
+#' and can be either \code{"IW"}, \code{"sparse"} or \code{"off-diagonal normal"} otherwise.
+#' @param X the data matrix
+#' @param inverts a list of inverses
+#' @param params a list of required arguments
+#'
+#' @return Updated parameters
+#'
+#' @importFrom Rfast rowsums colsums spdinv Crossprod Tcrossprod mat.mult
+#' Diag.fill Diag.matrix
+#'
+#' @export
+#'
+#' @examples
 CVI_update_function <- function(fixed_variance = FALSE,
                                 covariance_type = "diagonal",
                                 cluster_specific_covariance = TRUE,
@@ -5,7 +30,9 @@ CVI_update_function <- function(fixed_variance = FALSE,
                                                         "sparse",
                                                         "off-diagonal normal"),
                                 X, inverts, params){
-
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
   s1 <- params$prior_shape_alpha #shape parameter for alpha prior
   s2 <- params$prior_rate_alpha  #rate parameter for alpha prior
   W1 <- params$post_shape_alpha  #shape parameter for alpha posterior
@@ -13,8 +40,6 @@ CVI_update_function <- function(fixed_variance = FALSE,
   Mu0 <- params$prior_mean_eta   #prior mean for DP mean parameters; vector
   L1 <- params$post_mean_eta     #posterior mean for DP mean parameters; matrix
   P <- params$P                  #allocation probability matrix
-  D <- ncol(X)                   #dimension of the data
-  N <- nrow(X)                   #samples of the data
 
   RP <- Rfast::colsums(P)
   #probability matrix update based on latent allocations
@@ -241,11 +266,11 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
         } else if (variance_prior_type == "decomposed"){
 
-          a0 <- params$prior_scale_diag_decomp
+          a0 <- params$prior_shape_diag_decomp
           b0 <- params$prior_rate_diag_decomp
           mu0 <- params$prior_mean_offdiag_decomp
           c0 <- params$prior_var_offdiag_decomp
-          a1 <- params$post_scale_diag_decomp
+          a1 <- params$post_shape_diag_decomp
           b1 <- params$post_rate_diag_decomp
           mu1 <- params$post_mean_offdiag_decomp
           c1 <- params$post_var_offdiag_decomp
@@ -343,7 +368,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           c1 <- matrix(c1, nrow = 1)
 
           params$post_cov_eta <- L2
-          params$post_scale_diag_decomp <- a1
+          params$post_shape_diag_decomp <- a1
           params$post_rate_diag_decomp <- b1
           params$post_mean_offdiag_decomp <- mu1
           params$post_var_offdiag_decomp <- c1
@@ -423,10 +448,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
         } else if (variance_prior_type == "sparse"){
 
-          a0 <- params$prior_scale_d_cs_cov
+          a0 <- params$prior_shape_d_cs_cov
           b0 <- params$prior_rate_d_cs_cov
           c0 <- params$prior_var_offd_cs_cov
-          a1 <- params$post_scale_d_cs_cov
+          a1 <- params$post_shape_d_cs_cov
           B1 <- params$post_rate_d_cs_cov
           C1 <- params$post_var_offd_cs_cov
           k0 <- params$scaling_cov_eta
@@ -476,7 +501,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
                          Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
           }
 
-          params$post_scale_d_cs_cov <- a1
+          params$post_shape_d_cs_cov <- a1
           params$post_rate_d_cs_cov <- B1
           params$post_var_offd_cs_cov <- C1
           params$post_mean_eta <- L1
@@ -486,9 +511,9 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
         } else if (variance_prior_type == "off-diagonal normal"){
 
-          a0 <- params$prior_scale_d_cs_cov
+          a0 <- params$prior_shape_d_cs_cov
           b0 <- params$prior_rate_d_cs_cov
-          a1 <- params$post_scale_d_cs_cov
+          a1 <- params$post_shape_d_cs_cov
           B1 <- params$post_rate_d_cs_cov
           C1 <- params$post_mean_offd_cs_cov
           k0 <- params$scaling_cov_eta
@@ -538,7 +563,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
                          Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
           }
 
-          params$post_scale_d_cs_cov <- a1
+          params$post_shape_d_cs_cov <- a1
           params$post_rate_d_cs_cov <- B1
           params$post_mean_offd_cs_cov <- C1
           params$post_mean_eta <- L1

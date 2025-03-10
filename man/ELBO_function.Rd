@@ -30,7 +30,10 @@ for the covariance when cluster_specific_covariance is \code{TRUE}.
 Can be either \code{"IW"} or \code{"decomposed"} if \code{cluster_specific_covariance} is \code{FALSE},
 and can be either \code{"IW"}, \code{"sparse"} or \code{"off-diagonal normal"} otherwise.}
 
-\item{params}{a list}
+\item{params}{a list of required arguments}
+}
+\value{
+ELBO values
 }
 \description{
 General ELBO function

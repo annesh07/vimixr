@@ -62,11 +62,11 @@ params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal
           }
 
         } else if (variance_prior_type == "decomposed"){
-          if(is.null(params$prior_scale_diag_decomp) &&
+          if(is.null(params$prior_shape_diag_decomp) &&
              is.null(params$prior_rate_diag_decomp) &&
              is.null(params$prior_mean_offdiag_decomp) &&
              is.null(params$prior_var_offdiag_decomp) &&
-             is.null(params$post_scale_diag_decomp) &&
+             is.null(params$post_shape_diag_decomp) &&
              is.null(params$post_rate_diag_decomp) &&
              is.null(params$post_mean_offdiag_decomp) &&
              is.null(params$post_var_offdiag_decomp)  &&
@@ -76,9 +76,9 @@ params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal
             stop("fixed_variance = FALSE, covariance_type = 'full',
                  cluster_specific_covariance = FALSE and
                  variance_prior_type = 'decomposed' require the following
-                 argument to be non-null: 'prior_scale_diag_decomp',
+                 argument to be non-null: 'prior_shape_diag_decomp',
                  'prior_rate_diag_decomp', 'prior_mean_offdiag_decomp',
-                 'prior_var_offdiag_decomp', 'post_scale_diag_decomp',
+                 'prior_var_offdiag_decomp', 'post_shape_diag_decomp',
                  'post_rate_diag_decomp', 'post_mean_offdiag_decomp',
                  'post_var_offdiag_decomp', 'post_cov_eta', 'prior_cov_eta'")
           }
@@ -106,10 +106,10 @@ params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal
           }
 
         } else if (variance_prior_type == "sparse"){
-          if(is.null(params$prior_scale_d_cs_cov) &&
+          if(is.null(params$prior_shape_d_cs_cov) &&
              is.null(params$prior_rate_d_cs_cov) &&
              is.null(params$prior_var_offd_cs_cov) &&
-             is.null(params$post_scale_d_cs_cov) &&
+             is.null(params$post_shape_d_cs_cov) &&
              is.null(params$post_rate_d_cs_cov) &&
              is.null(params$post_var_offd_cs_cov) &&
              is.null(params$scaling_cov_eta)
@@ -117,16 +117,16 @@ params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal
             stop("fixed_variance = FALSE, covariance_type = 'full',
                  cluster_specific_covariance = TRUE and
                  variance_prior_type = 'sparse' require the following
-                 argument to be non-null: 'prior_scale_d_cs_cov',
+                 argument to be non-null: 'prior_shape_d_cs_cov',
                  'prior_rate_d_cs_cov', 'prior_var_offd_cs_cov',
-                 'post_scale_d_cs_cov', 'post_rate_d_cs_cov',
+                 'post_shape_d_cs_cov', 'post_rate_d_cs_cov',
                  'post_var_offd_cs_cov', 'scaling_cov_eta'")
           }
 
         } else if (variance_prior_type == "off-diagonal normal"){
-          if(is.null(params$prior_scale_d_cs_cov) &&
+          if(is.null(params$prior_shape_d_cs_cov) &&
              is.null(params$prior_rate_d_cs_cov) &&
-             is.null(params$post_scale_d_cs_cov) &&
+             is.null(params$post_shape_d_cs_cov) &&
              is.null(params$post_rate_d_cs_cov) &&
              is.null(params$post_mean_offd_cs_cov) &&
              is.null(params$scaling_cov_eta)
@@ -135,8 +135,8 @@ params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal
                  cluster_specific_covariance = TRUE and
                  variance_prior_type = 'off-diagonal normal'
                  require the following argument to be non-null:
-                 'prior_scale_d_cs_cov', 'prior_rate_d_cs_cov',
-                 'post_scale_d_cs_cov', 'post_rate_d_cs_cov',
+                 'prior_shape_d_cs_cov', 'prior_rate_d_cs_cov',
+                 'post_shape_d_cs_cov', 'post_rate_d_cs_cov',
                  'post_mean_offd_cs_cov', 'scaling_cov_eta'")
           }
 

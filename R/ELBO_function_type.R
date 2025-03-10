@@ -1,6 +1,11 @@
 
 elbo_fixed_diagonal <- function(X, inverts, params){
-
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   L1 <- params[["post_mean_eta"]]
   L2 <- params[["post_precision_scalar_eta"]]
   L20 <- params[["prior_precision_scalar_eta"]]
@@ -31,6 +36,12 @@ elbo_fixed_diagonal <- function(X, inverts, params){
 }
 
 elbo_varied_diagonal <- function(X, inverts, params){
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   L1 <- params$post_mean_eta
   b1 <- params$prior_shape_scalar_cov
   b2 <- params$prior_rate_scalar_cov
@@ -69,6 +80,12 @@ elbo_varied_diagonal <- function(X, inverts, params){
 }
 
 elbo_fixed_full <- function(X, inverts, params){
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   L1 <- params$post_mean_eta
   C0 <- params$cov_data
   L2 <- params$post_cov_eta
@@ -105,6 +122,12 @@ elbo_fixed_full <- function(X, inverts, params){
 }
 
 elbo_varied_IW_full <- function(X, inverts, params){
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   L1 <- params$post_mean_eta
   nu0 <- params$prior_df_cov
   V0 <- params$prior_scale_cov
@@ -164,11 +187,17 @@ elbo_varied_IW_full <- function(X, inverts, params){
 }
 
 elbo_varied_decomposed_full <- function(X, inverts, params){
-  a0 <- params$prior_scale_diag_decomp
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
+  a0 <- params$prior_shape_diag_decomp
   b0 <- params$prior_rate_diag_decomp
   mu0 <- params$prior_mean_offdiag_decomp
   c0 <- params$prior_var_offdiag_decomp
-  a1 <- params$post_scale_diag_decomp
+  a1 <- params$post_shape_diag_decomp
   b1 <- params$post_rate_diag_decomp
   mu1 <- params$post_mean_offdiag_decomp
   c1 <- params$post_var_offdiag_decomp
@@ -229,6 +258,12 @@ elbo_varied_decomposed_full <- function(X, inverts, params){
 }
 
 elbo_cs_IW <- function(X, inverts, params){
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   nu0 <- params$prior_df_cs_cov
   V0 <- params$prior_scale_cs_cov
   nu1 <- params$post_df_cs_cov
@@ -294,10 +329,16 @@ elbo_cs_IW <- function(X, inverts, params){
 }
 
 elbo_cs_sparse <- function(X, inverts, params){
-  a0 <- params$prior_scale_d_cs_cov
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
+  a0 <- params$prior_shape_d_cs_cov
   b0 <- params$prior_rate_d_cs_cov
   c0 <- params$prior_var_offd_cs_cov
-  a1 <- params$post_scale_d_cs_cov
+  a1 <- params$post_shape_d_cs_cov
   B1 <- params$post_rate_d_cs_cov
   C1 <- params$post_var_offd_cs_cov
   k0 <- params$scaling_cov_eta
@@ -367,9 +408,15 @@ elbo_cs_sparse <- function(X, inverts, params){
 }
 
 elbo_cs_offd_normal <- function(X, inverts, params){
-  a0 <- params$prior_scale_d_cs_cov
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
+  a0 <- params$prior_shape_d_cs_cov
   b0 <- params$prior_rate_d_cs_cov
-  a1 <- params$post_scale_d_cs_cov
+  a1 <- params$post_shape_d_cs_cov
   B1 <- params$post_rate_d_cs_cov
   C1 <- params$post_mean_offd_cs_cov
   k0 <- params$scaling_cov_eta

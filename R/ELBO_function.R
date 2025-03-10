@@ -11,11 +11,14 @@
 #' for the covariance when cluster_specific_covariance is \code{TRUE}.
 #' Can be either \code{"IW"} or \code{"decomposed"} if \code{cluster_specific_covariance} is \code{FALSE},
 #' and can be either \code{"IW"}, \code{"sparse"} or \code{"off-diagonal normal"} otherwise.
-#' @param params a list
+#' @param X the data matrix
+#' @param inverts a list of inverses
+#' @param params a list of required arguments
 #'
-#' @returns
+#' @returns ELBO values
 #'
-#' @importFrom Rfast rowsums colsums
+#' @importFrom Rfast rowsums colsums spdinv Crossprod Tcrossprod mat.mult
+#' Diag.fill Diag.matrix
 #'
 #' @export
 #'
@@ -27,13 +30,15 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
                           X,
                           inverts,
                           params){
-
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
   L1 <- params$post_mean_eta
   Mu0 <- params$prior_mean_eta
-  s1 <- params[["s1"]] #shape1 parameter for alpha prior
-  s2 <- params[["s2"]] #shape2 parameter for alpha prior
-  W1 <- params[["W1"]] #posterior shape1 parameter for alpha
-  W2 <- params[["W2"]] #posterior shape2 parameter for alpha
+  s1 <- params$prior_shape_alpha #shape1 parameter for alpha prior
+  s2 <- params$prior_rate_alpha #shape2 parameter for alpha prior
+  W1 <- params$post_shape_alpha #posterior shape1 parameter for alpha
+  W2 <- params$post_rate_alpha #posterior shape2 parameter for alpha
 
   Plog <- params[["log_prob_matrix"]] #log of posterior probability allocation matrix
   P <- params[["P"]]
@@ -49,9 +54,9 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
   ccp <- Rfast::rowsums(apply(P, 1, f0)) #cumulative cluster proportions
   v_ccp <- Rfast::rowsums(apply(P, 1, f1))  #variance of the cumulative cluster proportions
   e_indiv_alloc <- lgamma(1 + cp) + 0.5 * trigamma(1 + cp) * v_cp +
-    lgamma(W1 / W2 + enj) + 0.5 * trigamma(W1 / W2 + enj) * ((W1 / W2^2) + v_ccp) -
-    lgamma(1 + W1 / W2 + cp + enj) -
-    0.5*trigamma(1 + W1 / W2 + cp + enj) * (W1 / W2^2 + v_cp + v_ccp)
+    lgamma(W1 / W2 + ccp) + 0.5 * trigamma(W1 / W2 + ccp) * ((W1 / W2^2) + v_ccp) -
+    lgamma(1 + W1 / W2 + cp + ccp) -
+    0.5*trigamma(1 + W1 / W2 + cp + ccp) * (W1 / W2^2 + v_cp + v_ccp)
   e_alloc <- T0 * (digamma(W1) - log(W2)) + sum(e_indiv_alloc)
 
   #Variational expectation of alpha & latent allocations
@@ -63,7 +68,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
     if(fixed_variance) {
 
       fixed_diagonal_elbo <- elbo_fixed_diagonal(X, inverts, params)
-      fixed_diagonal_elbo$me_var <- fixed_diagonal_elbo$me_var -
+      fixed_diagonal_elbo[["me_var"]] <- fixed_diagonal_elbo[["me_var"]] -
         e_alpha_post - e_alloc_post
       out <- c("e_alpha" = e_alpha,  "e_alloc" = e_alloc,
                fixed_diagonal_elbo)
