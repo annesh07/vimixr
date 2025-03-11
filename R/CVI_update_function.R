@@ -51,8 +51,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
     p_eni <- Rfast::colsums(P1) #cluster proportions
     p_vni <- Rfast::colsums(P1*(1-P1)) #cluster proportion variance
-    p_enj <- Rfast::rowsums(apply(P1, 1, f0)) #cummulative cluster proportion
-    p_vnj <- Rfast::rowsums(apply(P1, 1, f1)) #cummulative cluster proportion variance
+    p_enj <- cum_clustprop(P1) #cummulative cluster proportion
+    p_vnj <- cum_clustprop_var(P1) #cummulative cluster proportion variance
+
+
 
     P20 <- log(1 + p_eni) - p_vni/((1 + p_eni)^2) - log(1 + p_eni + p_enj +
                                                           (W1/W2)) +
@@ -61,7 +63,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
     P21 <- log((W1/W2) + p_enj) - (p_vnj + (W1/(W2^2)))/(((W1/W2) + p_enj)^2) -
       log(1 + p_eni + p_enj + (W1/W2)) +
       (p_vni + p_vnj + (W1/(W2^2)))/((1 + p_eni + p_enj + (W1/W2))^2)
-    P22 <- c(0, cumsum(P21)[1:(T0-1)])
+    P22 <- c(0, cumsum(P21[1:(T0-1)]))
 
     P2[n,] <- P20 + P22
   }
@@ -604,8 +606,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
   if (l0 > 1){
     a_eni <- colsums(Pf0[,1:l0])
     a_vni <- colsums(Pf0[,1:l0]*(1-Pf0[,1:l0]))
-    a_enj <- rowsums(apply(Pf0[,1:l0], 1, f0))
-    a_vnj <- rowsums(apply(Pf0[,1:l0], 1, f1))
+    a_enj <- cum_clustprop(Pf0[,1:l0])
+    a_vnj <- cum_clustprop_var(Pf0[,1:l0])
     W20 <- log(alpha0 + a_eni[1:(l0 - 1)] + a_enj[1:(l0 - 1)]) -
       0.5*(a_vni[1:(l0 - 1)] +
              a_vnj[1:(l0 - 1)])/((alpha0 + a_eni[1:(l0 - 1)] +

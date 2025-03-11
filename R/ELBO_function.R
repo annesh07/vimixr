@@ -51,8 +51,8 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
   #expectation of latent probability allocation prior
   cp <- RP #cluster proportions
   v_cp <- Rfast::colsums(P*(1 - P)) #variance of the cluster proportions
-  ccp <- Rfast::rowsums(apply(P, 1, f0)) #cumulative cluster proportions
-  v_ccp <- Rfast::rowsums(apply(P, 1, f1))  #variance of the cumulative cluster proportions
+  ccp <- cum_clustprop(P) #cumulative cluster proportions
+  v_ccp <- cum_clustprop_var(P) #variance of the cumulative cluster proportions
   e_indiv_alloc <- lgamma(1 + cp) + 0.5 * trigamma(1 + cp) * v_cp +
     lgamma(W1 / W2 + ccp) + 0.5 * trigamma(W1 / W2 + ccp) * ((W1 / W2^2) + v_ccp) -
     lgamma(1 + W1 / W2 + cp + ccp) -

@@ -11,6 +11,28 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// cum_clustprop
+NumericVector cum_clustprop(const NumericMatrix P1);
+RcppExport SEXP _vimixr_cum_clustprop(SEXP P1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix >::type P1(P1SEXP);
+    rcpp_result_gen = Rcpp::wrap(cum_clustprop(P1));
+    return rcpp_result_gen;
+END_RCPP
+}
+// cum_clustprop_var
+NumericVector cum_clustprop_var(const NumericMatrix P1);
+RcppExport SEXP _vimixr_cum_clustprop_var(SEXP P1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix >::type P1(P1SEXP);
+    rcpp_result_gen = Rcpp::wrap(cum_clustprop_var(P1));
+    return rcpp_result_gen;
+END_RCPP
+}
 // quadratic_form_diag
 Eigen::VectorXd quadratic_form_diag(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
 RcppExport SEXP _vimixr_quadratic_form_diag(SEXP ASEXP, SEXP BSEXP) {
@@ -25,6 +47,8 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_vimixr_cum_clustprop", (DL_FUNC) &_vimixr_cum_clustprop, 1},
+    {"_vimixr_cum_clustprop_var", (DL_FUNC) &_vimixr_cum_clustprop_var, 1},
     {"_vimixr_quadratic_form_diag", (DL_FUNC) &_vimixr_quadratic_form_diag, 2},
     {NULL, NULL, 0}
 };
