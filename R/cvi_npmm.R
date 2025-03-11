@@ -396,7 +396,8 @@ cvi_npmm <- function(X, variational_params,
   posterior <- list("alpha" = alpha0, "Cluster number" = clustnum,
                     "Cluster Proportion" = clust,
                     "log Probability matrix" = Plog)
-  optimisation <- list("ELBO" = elbo_values)
+  optimisation <- list("ELBO" = elbo_values,
+                       "Iterations" = (length(elbo_values)-1))
 
   output <-  list("posterior" = posterior, "optimisation" = optimisation)
   class(output) <- "CVIoutput"
