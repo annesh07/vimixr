@@ -76,7 +76,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
     } else {
 
       varied_diagonal_elbo <- elbo_varied_diagonal(X, inverts, params)
-      varied_diagonal_elbo$me_var <- varied_diagonal_elbo$me_var -
+      varied_diagonal_elbo[["me_var"]] <- varied_diagonal_elbo[["me_var"]] -
         e_alpha_post - e_alloc_post
       out <- c("e_alpha" = e_alpha,  "e_alloc" = e_alloc,
                varied_diagonal_elbo)
@@ -88,7 +88,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
     if(fixed_variance) {
 
       fixed_full_elbo <- elbo_fixed_full(X, inverts, params)
-      fixed_full_elbo$me_var <- fixed_full_elbo$me_var -
+      fixed_full_elbo[["me_var"]] <- fixed_full_elbo[["me_var"]] -
         e_alpha_post - e_alloc_post
       out <- c("e_alpha" = e_alpha,  "e_alloc" = e_alloc,
                fixed_full_elbo)
@@ -98,7 +98,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
         if(variance_prior_type == "IW"){
 
           varied_IW_full_elbo <- elbo_varied_IW_full(X, inverts, params)
-          varied_IW_full_elbo$me_var <- varied_IW_full_elbo$me_var -
+          varied_IW_full_elbo[["me_var"]] <- varied_IW_full_elbo[["me_var"]] -
             e_alpha_post - e_alloc_post
           out <- c("e_alpha" = e_alpha,  "e_alloc" = e_alloc,
                    varied_IW_full_elbo)
@@ -107,7 +107,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
 
           varied_decomposed_full_elbo <- elbo_varied_decomposed_full(X, inverts,
                                                                      params)
-          varied_decomposed_full_elbo$me_var <- varied_decomposed_full_elbo$me_var -
+          varied_decomposed_full_elbo[["me_var"]] <- varied_decomposed_full_elbo[["me_var"]] -
             e_alpha_post - e_alloc_post
           out <- c("e_alpha" = e_alpha,  "e_alloc" = e_alloc,
                    varied_decomposed_full_elbo)
@@ -121,7 +121,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
         if(variance_prior_type == "IW"){
 
           cs_IW_elbo <- elbo_cs_IW(X, inverts, params)
-          cs_IW_elbo$me_var <- cs_IW_elbo$me_var -
+          cs_IW_elbo[["me_var"]] <- cs_IW_elbo[["me_var"]] -
             e_alpha_post - e_alloc_post
           out <- c("e_alpha" = e_alpha,  "e_alloc" = e_alloc,
                    cs_IW_elbo)
@@ -129,7 +129,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
         } else if (variance_prior_type == "sparse"){
 
           cs_sparse_elbo <- elbo_cs_sparse(X, inverts, params)
-          cs_sparse_elbo$me_var <- cs_sparse_elbo$me_var -
+          cs_sparse_elbo[["me_var"]] <- cs_sparse_elbo[["me_var"]] -
             e_alpha_post - e_alloc_post
           out <- c("e_alpha" = e_alpha,  "e_alloc" = e_alloc,
                    cs_sparse_elbo)
@@ -137,7 +137,7 @@ ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
         } else if (variance_prior_type == "off-diagonal normal"){
 
           cs_offd_normal_elbo <- elbo_cs_offd_normal(X, inverts, params)
-          cs_offd_normal_elbo$me_var <- cs_offd_normal_elbo$me_var -
+          cs_offd_normal_elbo[["me_var"]] <- cs_offd_normal_elbo[["me_var"]] -
             e_alpha_post - e_alloc_post
           out <- c("e_alpha" = e_alpha,  "e_alloc" = e_alloc,
                    cs_offd_normal_elbo)
