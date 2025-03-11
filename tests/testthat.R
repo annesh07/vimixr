@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(CVI)
+library(vimixr)
 
-test_check("CVI")
+test_check("vimixr")

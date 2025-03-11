@@ -106,9 +106,9 @@ elbo_fixed_full <- function(X, inverts, params){
     sum(e20) + sum(e21) + sum(e22)
 
   #the X's
-  e30 <- eachcol.apply(P, -0.5 * quadratic_form_diag(X, inv_C0), oper = "*")
+  e30 <- sweep(P, 1, -0.5 * quadratic_form_diag(X, inv_C0), "*")
   e31 <- P*t(Rfast::mat.mult(L21, Rfast::Tcrossprod(inv_C0, X)))
-  e32 <- eachrow(P, -0.5 * quadratic_form_diag(L21, inv_C0), oper = "*")
+  e32 <- sweep(P, 2, -0.5 * quadratic_form_diag(L21, inv_C0), "*")
   e33 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
   e34 <- P*matrix(e33, nrow = N, ncol = T0, byrow=TRUE)
   e3 <- N*(-0.5*D*log(2*pi) + 0.5*determinant(inv_C0, logarithm = TRUE)$modulus) +
@@ -227,11 +227,11 @@ elbo_varied_decomposed_full <- function(X, inverts, params){
     sum(e20) + sum(e21) + sum(e22)
 
   #the X's
-  e30 <- eachcol.apply(P, -0.5 * quadratic_form_diag(X, inv_C0), oper = "*")
+  e30 <- sweep(P, 1, -0.5 * quadratic_form_diag(X, inv_C0), "*")
   e31 <- P*t(Rfast::mat.mult(L21, Rfast::Tcrossprod(inv_C0, X)))
-  e32 <- eachrow(P, -0.5 * quadratic_form_diag(L21, inv_C0), oper = "*")
+  e32 <- sweep(P, 2, -0.5 * quadratic_form_diag(L21, inv_C0), "*")
   e33 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0) * x)})
-  e34 <- eachrow(P, e33, oper = "*")
+  e34 <- sweep(P, 2, e33, "*")
   e3 <- sum(P*(-0.5*D*log(2*pi) + 0.5*sum(digamma(a1) - log(b1)))) + sum(e30) +
     sum(e31) + sum(e32) + sum(e34)
 

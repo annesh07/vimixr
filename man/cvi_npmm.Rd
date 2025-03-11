@@ -19,7 +19,7 @@ cvi_npmm(
   fixed_variance = FALSE,
   cluster_specific_covariance = TRUE,
   variance_prior_type = c("IW", "decomposed", "sparse", "off-diagonal normal"),
-  arguments
+  ...
 )
 }
 \arguments{
@@ -65,7 +65,7 @@ choice of matrix prior is either Inverse-Wishart ('IW'), element-wise Gamma
 and Laplace distributed ('sparse') or element-wise Gamma and Normal
 distributed ('off-diagonal normal')}
 
-\item{arguments}{additional arguments, further details given below}
+\item{...}{additional parameters, further details given below}
 }
 \value{
 Posterior DP concentration parameter \code{alpha},
@@ -218,15 +218,19 @@ covariance matrix of the DP mean parameters}{}
 
 X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
            matrix(rnorm(100, m=3, sd=0.5), ncol=2))
+prior_precision_scalar_eta = 0.001
+post_precision_scalar_eta = matrix(0.001, 20, 1)
+cov_data = diag(ncol(X))
 cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
-         post_mean_eta = matrix(0.001, nrow(X), ncol(X)),
+         post_mean_eta = matrix(0.001, 20, ncol(X)),
          log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
                              function(x){x/sum(x)})), maxit = 1000,
          fixed_variance=TRUE, covariance_type="diagonal",
-         prior_precision_scalar_eta = 0.001,
-         post_precision_scalar_eta = 0.001, cov_data)
+         prior_precision_scalar_eta,
+         post_precision_scalar_eta,
+         cov_data)
 
 
 }

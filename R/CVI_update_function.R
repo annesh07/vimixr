@@ -77,7 +77,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
       Mu00 <- Rfast::mat.mult(Mu0, inv_C00)
 
       L21 <- sweep(L1, 1, L2, "/")
-      P230 <- Rfast:mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
+      P230 <- Rfast::mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
       P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
       P232 <- - 0.5*sum(diag(inv_C0))/L2
       P233 <- - 0.5*quadratic_form_diag(X, inv_C0)
@@ -168,7 +168,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
         L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
       }
 
-      P230 <- Rfast:mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
+      P230 <- Rfast::mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
       P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
       P232 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
       P233 <- - 0.5*quadratic_form_diag(X, inv_C0)
@@ -213,7 +213,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           for (i in 1:T0){
             L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
           }
-          P230 <- Rfast:mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
+          P230 <- Rfast::mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
           P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
           P232 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
           P233 <- - 0.5*quadratic_form_diag(X, inv_C0)
@@ -292,7 +292,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           for (i in 1:T0){
             L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
           }
-          P230 <- Rfast:mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
+          P230 <- Rfast::mat.mult(X, Rfast::Tcrossprod(inv_C0, L21))
           P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
           P232 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
           P233 <- - 0.5*quadratic_form_diag(X, inv_C0)
@@ -321,7 +321,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           b21 <- matrix(0, nrow = T0, ncol = D)
           colPf0 <- colsums(P)
           for (i in 1:T0){
-            b20 <- eachrow(X, L21[i,], oper = "-")
+            b20 <- sweep(X, 2, L21[i,], "-")
             b21[i,] <- colsums(P[,i]*(b20^2)) + colPf0[i]*diag(L2[,,i])
           }
           b21 <- colsums(b21)
@@ -337,8 +337,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
           diag_L <- sqrt(1/b1)*sqrt(pi)/beta(a1,0.5)
           lowerL <- diag(diag_L)
           for (k in 2:D){
-            mu10 <- eachcol.apply(X[, 1:(k-1), drop=FALSE],
-                                  rowsums(P)*X[,k, drop=FALSE], oper = "*")
+            mu10 <- sweep(X[, 1:(k-1), drop=FALSE], 1,
+                                  rowsums(P)*X[,k, drop=FALSE], "*")
 
             mu20 <- rep(0, (k-1))
             for (n in 1:N){
@@ -355,7 +355,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
             }
 
             lower_L0 <- lowerL[1:(k-1), 1:(k-1), drop = FALSE]
-            muf0 <- eachcol.apply(lower_L0, (mu10 - mu20 + mu30), oper = "*")
+            muf0 <- sweep(lower_L0, 1, (mu10 - mu20 + mu30), "*")
             muf <- (mu0/c0 - muf0)/sigma_lower[k, 1:(k-1)]
 
             lowerL[k,] <- c(muf, diag_L[k], rep(0, (D - (length(muf)+1))))
@@ -459,7 +459,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           #expectation of inverse of C0, data covariance matrix
           inv_C0 <- array(0, c(D, D, T0))
           for (i in 1:T0){
-            inv_C0[,,i] <- Diag.matrix(D, a1[1,i]/B1[i,])
+            inv_C0[,,i] <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
           }
 
           #updating the latent probability values
@@ -496,7 +496,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           for (i in 1:T0){
             B1[i,] <- b0 + Rfast::colsums(sweep(X^2, 1, P[,i], "*"))
             C01 <- 1/c0 + 0.5*abs(Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X))
-            C1[,,i] <- Diag.fill(1/C01, rep(0, D))
+            C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
                          Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
           }
@@ -521,7 +521,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           #expectation of inverse of data covariance matrix
           inv_C0 <- array(0, c(D, D, T0))
           for (i in 1:T0){
-            inv_C0[,,i] <- Diag.fill(C1[,,i], a1[1,i]/B1[i,])
+            inv_C0[,,i] <- Rfast::Diag.fill(C1[,,i], a1[1,i]/B1[i,])
           }
 
           #updating the latent probability values
@@ -558,7 +558,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           for (i in 1:T0){
             B1[i,] <- b0 + Rfast::colsums(sweep(X^2, 1, P[,i], "*"))
             C01 <- 0.5*(Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X))
-            C1[,,i] <- Diag.fill(C01, rep(0, D))
+            C1[,,i] <- Rfast::Diag.fill(C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
                          Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
           }
