@@ -1,6 +1,11 @@
 
 elbo_fixed_diagonal <- function(X, inverts, params){
-
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   L1 <- params[["post_mean_eta"]]
   L2 <- params[["post_precision_scalar_eta"]]
   L20 <- params[["prior_precision_scalar_eta"]]
@@ -9,16 +14,17 @@ elbo_fixed_diagonal <- function(X, inverts, params){
 
   #the eta's
   L21 <- sweep(L1, 1, L2, "/")
-  e20 <- -0.5*quadratic_form_diag(L21, inv_C00) #diag(-0.5 * L21 %*% tcrossprod(inv_C00, L21))
+  e20 <- -0.5*quadratic_form_diag(L21, inv_C00)
   e21 <- -0.5 * (D * L20)/L2
-  e22 <- Mu0 %*% tcrossprod(inv_C00, L21)
-  e2 <-  T0 * (-D/2 * log(2 * pi) + D * 0.5 * log(L20) - 0.5 * Mu0 %*% tcrossprod(inv_C00, Mu0)) +
+  e22 <- Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, L21))
+  e2 <-  T0 * (-D/2 * log(2 * pi) + D * 0.5 * log(L20) -
+                 0.5 * Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, Mu0))) +
     sum(e20) + sum(e21) + sum(e22)
 
   #the X's
-  e30 <- sweep(P, 1, -0.5 * diag(X %*% tcrossprod(inv_C0, X)), "*")
-  e31 <- P * t(L21 %*% tcrossprod(inv_C0, X))
-  e32 <- sweep(P, 2, -0.5 * diag(L21 %*% tcrossprod(inv_C0, L21)), "*")
+  e30 <- sweep(P, 1, -0.5 * quadratic_form_diag(X, inv_C0), "*")
+  e31 <- P * t(Rfast::mat.mult(L21, Rfast::Tcrossprod(inv_C0, X)))
+  e32 <- sweep(P, 2, -0.5 * quadratic_form_diag(L21, inv_C0), "*")
   e33 <- sweep(P, 2, -0.5 * sum(diag(inv_C0))/L2, "*")
   e3 <- sum(P * (-0.5 * D * log(2 * pi) + 0.5 * determinant(inv_C0, logarithm=TRUE)$modulus))
   + sum(e30) + sum(e31) + sum(e32) + sum(e33)
@@ -30,6 +36,12 @@ elbo_fixed_diagonal <- function(X, inverts, params){
 }
 
 elbo_varied_diagonal <- function(X, inverts, params){
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   L1 <- params$post_mean_eta
   b1 <- params$prior_shape_scalar_cov
   b2 <- params$prior_rate_scalar_cov
@@ -41,16 +53,17 @@ elbo_varied_diagonal <- function(X, inverts, params){
 
   #the eta's
   L21 <- sweep(L1, 1, L2, "/")
-  e20 <- diag(-0.5*L21 %*% tcrossprod(inv_C00, L21))
+  e20 <- -0.5 * quadratic_form_diag(L21, inv_C00)
   e21 <- - 0.5*(D*L20)/L2
-  e22 <- Mu0 %*% tcrossprod(inv_C00, L21)
-  e2 <-  T0*(-D/2*log(2*pi) + D*0.5*log(L20) - 0.5*Mu0 %*% tcrossprod(inv_C00, Mu0)) +
+  e22 <- Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, L21))
+  e2 <-  T0*(-D/2*log(2*pi) + D*0.5*log(L20) -
+               0.5*Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, Mu0))) +
     sum(e20) + sum(e21) + sum(e22)
 
   #the X's
-  e30 <- sweep(P, 1, -0.5*(G1/G2)*diag(tcrossprod(X)), "*")
-  e31 <- P*t((G1/G2)*(tcrossprod(L21, X)))
-  e32 <- sweep(P, 2, -0.5*(G1/G2)*diag(tcrossprod(L21)), "*")
+  e30 <- sweep(P, 1, -0.5*(G1/G2)*diag(Rfast::Tcrossprod(X, X)), "*")
+  e31 <- P*t((G1/G2)*(Rfast::Tcrossprod(L21, X)))
+  e32 <- sweep(P, 2, -0.5*(G1/G2)*diag(Rfast::Tcrossprod(L21, L21)), "*")
   e33 <- sweep(P, 2, -0.5*(G1/G2)*D/L2, "*")
   e3 <- sum(P*(-0.5*D*log(2*pi) + 0.5*D*(digamma(G1) - log(G2))))
   + sum(e30) + sum(e31) + sum(e32) + sum(e33)
@@ -67,6 +80,12 @@ elbo_varied_diagonal <- function(X, inverts, params){
 }
 
 elbo_fixed_full <- function(X, inverts, params){
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   L1 <- params$post_mean_eta
   C0 <- params$cov_data
   L2 <- params$post_cov_eta
@@ -77,19 +96,19 @@ elbo_fixed_full <- function(X, inverts, params){
   #the eta's
   L21 <- matrix(0, nrow = T0, ncol = D)
   for (i in 1:T0){
-    L21[i,] = L1[i,, drop = FALSE] %*% L2[,,i]
+    L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
   }
-  e20 <- diag(-0.5*L21 %*% tcrossprod(inv_C00, L21))
+  e20 <- -0.5 * quadratic_form_diag(L21, inv_C00)
   e21 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C00)*x)})
-  e22 <- Mu0 %*% tcrossprod(inv_C00, L21)
+  e22 <- Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, L21))
   e2 <-  T0*(-D/2*log(2*pi) - 0.5*determinant(C00, logarithm = TRUE)$modulus -
-               0.5*Mu0 %*% tcrossprod(inv_C00, Mu0)) +
+               0.5*Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, Mu0))) +
     sum(e20) + sum(e21) + sum(e22)
 
   #the X's
-  e30 <- eachcol.apply(P, -0.5*diag(X %*% tcrossprod(inv_C0, X)), oper = "*")
-  e31 <- P*t(L21 %*% tcrossprod(inv_C0, X))
-  e32 <- eachrow(P, -0.5*diag(L21 %*% tcrossprod(inv_C0, L21)), oper = "*")
+  e30 <- sweep(P, 1, -0.5 * quadratic_form_diag(X, inv_C0), "*")
+  e31 <- P*t(Rfast::mat.mult(L21, Rfast::Tcrossprod(inv_C0, X)))
+  e32 <- sweep(P, 2, -0.5 * quadratic_form_diag(L21, inv_C0), "*")
   e33 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
   e34 <- P*matrix(e33, nrow = N, ncol = T0, byrow=TRUE)
   e3 <- N*(-0.5*D*log(2*pi) + 0.5*determinant(inv_C0, logarithm = TRUE)$modulus) +
@@ -103,6 +122,12 @@ elbo_fixed_full <- function(X, inverts, params){
 }
 
 elbo_varied_IW_full <- function(X, inverts, params){
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
   L1 <- params$post_mean_eta
   nu0 <- params$prior_df_cov
   V0 <- params$prior_scale_cov
@@ -118,19 +143,19 @@ elbo_varied_IW_full <- function(X, inverts, params){
   #the eta's
   L21 <- matrix(0, nrow = T0, ncol = D)
   for (i in 1:T0){
-    L21[i,] = L1[i,, drop = FALSE] %*% L2[,,i]
+    L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
   }
-  e20 <- diag(-0.5*L21 %*% tcrossprod(inv_C00, L21))
+  e20 <- -0.5 * quadratic_form_diag(L21, inv_C00)
   e21 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C00) * x)})
-  e22 <- Mu0 %*% tcrossprod(inv_C00, L21)
+  e22 <- Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, L21))
   e2 <-  T0*(-D/2*log(2*pi) - 0.5*determinant(C00, logarithm = TRUE)$modulus -
-               0.5*Mu0 %*% tcrossprod(inv_C00, Mu0)) +
+               0.5*Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, Mu0))) +
     sum(e20) + sum(e21) + sum(e22)
 
   #the X's
-  e30 <- sweep(P, 1, -0.5*diag(X %*% tcrossprod(inv_C0, X)), "*")
-  e31 <- P*t(L21 %*% tcrossprod(inv_C0, X))
-  e32 <- sweep(P, 2, -0.5*diag(L21 %*% tcrossprod(inv_C0, L21)), "*")
+  e30 <- sweep(P, 1, -0.5 * quadratic_form_diag(X, inv_C0), "*")
+  e31 <- P*t(Rfast::mat.mult(L21, Rfast::Tcrossprod(inv_C0, X)))
+  e32 <- sweep(P, 2, -0.5 * quadratic_form_diag(L21, inv_C0), "*")
   e33 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0)*x)})
   e34 <- sweep(P, 2, e33, "*")
   e3 <- sum(P*(-0.5*D*log(2*pi) + 0.5*(sum(digamma(0.5*(nu + 1 - c(1:D)))) +
@@ -162,11 +187,18 @@ elbo_varied_IW_full <- function(X, inverts, params){
 }
 
 elbo_varied_decomposed_full <- function(X, inverts, params){
-  a0 <- params$prior_scale_diag_decomp
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
+  L1 <- params$post_mean_eta
+  a0 <- params$prior_shape_diag_decomp
   b0 <- params$prior_rate_diag_decomp
   mu0 <- params$prior_mean_offdiag_decomp
   c0 <- params$prior_var_offdiag_decomp
-  a1 <- params$post_scale_diag_decomp
+  a1 <- params$post_shape_diag_decomp
   b1 <- params$post_rate_diag_decomp
   mu1 <- params$post_mean_offdiag_decomp
   c1 <- params$post_var_offdiag_decomp
@@ -181,26 +213,26 @@ elbo_varied_decomposed_full <- function(X, inverts, params){
   mean_L <- mean_lower + diag(sqrt(1/b1)*sqrt(pi)/beta(a1,0.5))
   diag(sigma_lower) <- (1/b1)*(a1 - (sqrt(pi)/beta(a1,0.5))^2)
   #expected inverse of C0; covariance matrix of data
-  inv_C0 <- tcrossprod(mean_L) + diag(rowsums(sigma_lower))
+  inv_C0 <- Rfast::Tcrossprod(mean_L, mean_L) + diag(rowsums(sigma_lower))
 
   #the eta's
   L21 <- matrix(0, nrow = T0, ncol = D)
   for (i in 1:T0){
-    L21[i,] = L1[i,, drop = FALSE] %*% L2[,,i]
+    L21[i,] = Rfast::mat.mult(L1[i,, drop = FALSE], L2[,,i])
   }
-  e20 <- diag(-0.5*L21 %*% tcrossprod(inv_C00, L21))
+  e20 <- -0.5 * quadratic_form_diag(L21, inv_C00)
   e21 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C00) * x)})
-  e22 <- Mu0 %*% tcrossprod(inv_C00, L21)
+  e22 <- Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, L21))
   e2 <-  T0*(-D/2*log(2*pi) - 0.5*determinant(C00, logarithm = TRUE)$modulus -
-               0.5*Mu0 %*% tcrossprod(inv_C00, Mu0)) +
+               0.5*Rfast::mat.mult(Mu0, Rfast::Tcrossprod(inv_C00, Mu0))) +
     sum(e20) + sum(e21) + sum(e22)
 
   #the X's
-  e30 <- eachcol.apply(P, -0.5*diag(X %*% tcrossprod(inv_C0, X)), oper = "*")
-  e31 <- P*t(L21 %*% tcrossprod(inv_C0, X))
-  e32 <- eachrow(P, -0.5*diag(L21%*%tcrossprod(inv_C0, L21)), oper = "*")
+  e30 <- sweep(P, 1, -0.5 * quadratic_form_diag(X, inv_C0), "*")
+  e31 <- P*t(Rfast::mat.mult(L21, Rfast::Tcrossprod(inv_C0, X)))
+  e32 <- sweep(P, 2, -0.5 * quadratic_form_diag(L21, inv_C0), "*")
   e33 <- apply(L2, 3, function(x){-0.5*sum(t(inv_C0) * x)})
-  e34 <- eachrow(P, e33, oper = "*")
+  e34 <- sweep(P, 2, e33, "*")
   e3 <- sum(P*(-0.5*D*log(2*pi) + 0.5*sum(digamma(a1) - log(b1)))) + sum(e30) +
     sum(e31) + sum(e32) + sum(e34)
 
@@ -227,6 +259,13 @@ elbo_varied_decomposed_full <- function(X, inverts, params){
 }
 
 elbo_cs_IW <- function(X, inverts, params){
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
+  L1 <- params$post_mean_eta
   nu0 <- params$prior_df_cs_cov
   V0 <- params$prior_scale_cs_cov
   nu1 <- params$post_df_cs_cov
@@ -248,11 +287,15 @@ elbo_cs_IW <- function(X, inverts, params){
   e20 <- rep(0, T0)
   e21 <- rep(0, T0)
   for (i in 1:T0){
-    e20[i] <- -(1/(2*k0))*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                           L1[i,,drop=FALSE])
-    e21[i] <- (1/k0)*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i], Mu0)
+    e20[i] <- -(1/(2*k0))*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                          Rfast::Tcrossprod(inv_C0[,,i],
+                                                           L1[i,,drop=FALSE]))
+    e21[i] <- (1/k0)*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                     Rfast::Tcrossprod(inv_C0[,,i], Mu0))
   }
-  e22 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*Mu0 %*% tcrossprod(x, Mu0)})
+  e22 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*
+                                      Rfast::mat.mult(Mu0,
+                                                      Rfast::Tcrossprod(x, Mu0))})
   e23 <- apply(inv_C0, 3, function(x){-0.5*sum(t(V0)*x)})
   e2 <- -0.5*D*T0*log(2*pi) + 0.5*(nu0 + D + 2)*sum(E_log_C0) + sum(e20) -
     (1/(2*k0))*D*sum(1/(1/k0 + RP)) + sum(e21) + sum(e22) - 0.5*T0*nu0*D*log(2) -
@@ -264,10 +307,12 @@ elbo_cs_IW <- function(X, inverts, params){
   e31 <- matrix(0, nrow = N, ncol = T0)
   for (n in 1:N){
     for (i in 1:T0){
-      e30[n,i] <- -0.5*P[n,i]*X[n,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                              X[n,,drop=FALSE])
-      e31[n,i] <- P[n,i]*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                          X[n,,drop=FALSE])
+      e30[n,i] <- -0.5*P[n,i]*Rfast::mat.mult(X[n,,drop=FALSE],
+                                              Rfast::Tcrossprod(inv_C0[,,i],
+                                                                X[n,,drop=FALSE]))
+      e31[n,i] <- P[n,i]*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                         Rfast::Tcrossprod(inv_C0[,,i],
+                                                           X[n,,drop=FALSE]))
     }
   }
   e3 <- -N*0.5*D*log(2*pi) + sum(RP*0.5*E_log_C0) + sum(e30) + sum(e31) +
@@ -286,10 +331,17 @@ elbo_cs_IW <- function(X, inverts, params){
 }
 
 elbo_cs_sparse <- function(X, inverts, params){
-  a0 <- params$prior_scale_d_cs_cov
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
+  L1 <- params$post_mean_eta
+  a0 <- params$prior_shape_d_cs_cov
   b0 <- params$prior_rate_d_cs_cov
   c0 <- params$prior_var_offd_cs_cov
-  a1 <- params$post_scale_d_cs_cov
+  a1 <- params$post_shape_d_cs_cov
   B1 <- params$post_rate_d_cs_cov
   C1 <- params$post_var_offd_cs_cov
   k0 <- params$scaling_cov_eta
@@ -311,11 +363,15 @@ elbo_cs_sparse <- function(X, inverts, params){
   e202 <- e200
   for (i in 1:T0){
     e200[i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
-    e201[i] <- -(1/(2*k0))*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                            L1[i,,drop=FALSE])
-    e202[i] <- (1/k0)*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i], Mu0)
+    e201[i] <- -(1/(2*k0))*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                           Rfast::Tcrossprod(inv_C0[,,i],
+                                                             L1[i,,drop=FALSE]))
+    e202[i] <- (1/k0)*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                      Rfast::Tcrossprod(inv_C0[,,i], Mu0))
   }
-  e203 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*Mu0 %*% tcrossprod(x, Mu0)})
+  e203 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*
+                                       Rfast::mat.mult(Mu0,
+                                                       Rfast::Tcrossprod(x, Mu0))})
   e20 <- -0.5*T0*log(2*pi) - 0.5*log(k0) + sum(e200) + sum(e201) -
     (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + sum(e203)
 
@@ -332,10 +388,12 @@ elbo_cs_sparse <- function(X, inverts, params){
   e31 <- matrix(0, nrow = N, ncol = T0)
   for (n in 1:N){
     for (i in 1:T0){
-      e30[n,i] <- -0.5*P[n,i]*X[n,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                              X[n,,drop=FALSE])
-      e31[n,i] <- P[n,i]*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                          X[n,,drop=FALSE])
+      e30[n,i] <- -0.5*P[n,i]*Rfast::mat.mult(X[n,,drop=FALSE],
+                                              Rfast::Tcrossprod(inv_C0[,,i],
+                                                                X[n,,drop=FALSE]))
+      e31[n,i] <- P[n,i]*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                         Rfast::Tcrossprod(inv_C0[,,i],
+                                                           X[n,,drop=FALSE]))
     }
   }
   e3 <- -N*0.5*D*log(2*pi) + sum(RP*e200) + sum(e30) + sum(e31) +
@@ -353,9 +411,16 @@ elbo_cs_sparse <- function(X, inverts, params){
 }
 
 elbo_cs_offd_normal <- function(X, inverts, params){
-  a0 <- params$prior_scale_d_cs_cov
+  N <- params$N
+  D <- params$D
+  T0 <- params$T0
+  Mu0 <- params$prior_mean_eta
+  P <- params$P
+  RP <- Rfast::colsums(P)
+  L1 <- params$post_mean_eta
+  a0 <- params$prior_shape_d_cs_cov
   b0 <- params$prior_rate_d_cs_cov
-  a1 <- params$post_scale_d_cs_cov
+  a1 <- params$post_shape_d_cs_cov
   B1 <- params$post_rate_d_cs_cov
   C1 <- params$post_mean_offd_cs_cov
   k0 <- params$scaling_cov_eta
@@ -377,11 +442,15 @@ elbo_cs_offd_normal <- function(X, inverts, params){
   e202 <- e200
   for (i in 1:T0){
     e200[i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
-    e201[i] <- -(1/(2*k0))*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                            L1[i,,drop=FALSE])
-    e202[i] <- (1/k0)*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i], Mu0)
+    e201[i] <- -(1/(2*k0))*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                           Rfast::Tcrossprod(inv_C0[,,i],
+                                                             L1[i,,drop=FALSE]))
+    e202[i] <- (1/k0)*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                      Rfast::Tcrossprod(inv_C0[,,i], Mu0))
   }
-  e203 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*Mu0 %*% tcrossprod(x, Mu0)})
+  e203 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*
+                                       Rfast::mat.mult(Mu0,
+                                                       Rfast::Tcrossprod(x, Mu0))})
   e20 <- -0.5*T0*log(2*pi) - 0.5*log(k0) + sum(e200) + sum(e201) -
     (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + sum(e203)
 
@@ -398,10 +467,12 @@ elbo_cs_offd_normal <- function(X, inverts, params){
   e31 <- matrix(0, nrow = N, ncol = T0)
   for (n in 1:N){
     for (i in 1:T0){
-      e30[n,i] <- -0.5*P[n,i]*X[n,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                              X[N,,drop=FALSE])
-      e31[n,i] <- P[n,i]*L1[i,,drop=FALSE] %*% tcrossprod(inv_C0[,,i],
-                                                          X[N,,drop=FALSE])
+      e30[n,i] <- -0.5*P[n,i]*Rfast::mat.mult(X[n,,drop=FALSE],
+                                              Rfast::Tcrossprod(inv_C0[,,i],
+                                                                X[n,,drop=FALSE]))
+      e31[n,i] <- P[n,i]*Rfast::mat.mult(L1[i,,drop=FALSE],
+                                         Rfast::Tcrossprod(inv_C0[,,i],
+                                                           X[n,,drop=FALSE]))
     }
   }
   e3 <- -N*0.5*D*log(2*pi) + sum(RP*e200) + sum(e30) + sum(e31) +
