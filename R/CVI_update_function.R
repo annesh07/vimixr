@@ -88,7 +88,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
       Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                  byrow = TRUE) + P233
       #log-sum-exp trick
-      Plog <- t(apply(Plog, 1, function(x){x - max(x) - log(sum(exp(x - max(x))))}))
+      Plog <- t(apply(Plog, 1, function(x){
+        mx <- max(x)
+        x - mx - log(sum(exp(x - mx)))
+      }))
       P <- exp(Plog)
       RP <- Rfast::colsums(P)
 
