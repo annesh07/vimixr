@@ -25,6 +25,11 @@ quadratic_form_diag <- function(A, B) {
 }
 
 #' @export
+sweep_2D <- function(A, B, operation, margin) {
+    .Call(`_vimixr_sweep_2D`, A, B, operation, margin)
+}
+
+#' @export
 t_mat_mult <- function(A, B, C) {
     .Call(`_vimixr_t_mat_mult`, A, B, C)
 }

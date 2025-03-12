@@ -438,7 +438,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
             }
             V1[,,i] <- V0 + (1/k0)*Rfast::Crossprod(Mu0, Mu0) + V1[,,i] +
               diag(1e-6, D)
-            L1[i,] <- (Mu0/k0 + colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
+            L1[i,] <- (Mu0/k0 + Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
           }
 
           params$post_df_cs_cov <- nu1

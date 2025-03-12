@@ -70,6 +70,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sweep_2D
+Eigen::MatrixXd sweep_2D(Eigen::MatrixXd& A, const Eigen::VectorXd& B, const std::string& operation, const int margin);
+RcppExport SEXP _vimixr_sweep_2D(SEXP ASEXP, SEXP BSEXP, SEXP operationSEXP, SEXP marginSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Eigen::MatrixXd& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type B(BSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type operation(operationSEXP);
+    Rcpp::traits::input_parameter< const int >::type margin(marginSEXP);
+    rcpp_result_gen = Rcpp::wrap(sweep_2D(A, B, operation, margin));
+    return rcpp_result_gen;
+END_RCPP
+}
 // t_mat_mult
 Eigen::MatrixXd t_mat_mult(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B, const Eigen::MatrixXd& C);
 RcppExport SEXP _vimixr_t_mat_mult(SEXP ASEXP, SEXP BSEXP, SEXP CSEXP) {
@@ -90,6 +104,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_vimixr_mat_mult", (DL_FUNC) &_vimixr_mat_mult, 2},
     {"_vimixr_mat_mult_t", (DL_FUNC) &_vimixr_mat_mult_t, 3},
     {"_vimixr_quadratic_form_diag", (DL_FUNC) &_vimixr_quadratic_form_diag, 2},
+    {"_vimixr_sweep_2D", (DL_FUNC) &_vimixr_sweep_2D, 4},
     {"_vimixr_t_mat_mult", (DL_FUNC) &_vimixr_t_mat_mult, 3},
     {NULL, NULL, 0}
 };
