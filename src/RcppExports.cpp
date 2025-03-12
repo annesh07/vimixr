@@ -33,6 +33,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mat_mult
+Eigen::MatrixXd mat_mult(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
+RcppExport SEXP _vimixr_mat_mult(SEXP ASEXP, SEXP BSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type B(BSEXP);
+    rcpp_result_gen = Rcpp::wrap(mat_mult(A, B));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mat_mult_t
+Eigen::MatrixXd mat_mult_t(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B, const Eigen::MatrixXd& C);
+RcppExport SEXP _vimixr_mat_mult_t(SEXP ASEXP, SEXP BSEXP, SEXP CSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type B(BSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type C(CSEXP);
+    rcpp_result_gen = Rcpp::wrap(mat_mult_t(A, B, C));
+    return rcpp_result_gen;
+END_RCPP
+}
 // quadratic_form_diag
 Eigen::VectorXd quadratic_form_diag(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
 RcppExport SEXP _vimixr_quadratic_form_diag(SEXP ASEXP, SEXP BSEXP) {
@@ -45,11 +70,27 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// t_mat_mult
+Eigen::MatrixXd t_mat_mult(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B, const Eigen::MatrixXd& C);
+RcppExport SEXP _vimixr_t_mat_mult(SEXP ASEXP, SEXP BSEXP, SEXP CSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type B(BSEXP);
+    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type C(CSEXP);
+    rcpp_result_gen = Rcpp::wrap(t_mat_mult(A, B, C));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_vimixr_cum_clustprop", (DL_FUNC) &_vimixr_cum_clustprop, 1},
     {"_vimixr_cum_clustprop_var", (DL_FUNC) &_vimixr_cum_clustprop_var, 1},
+    {"_vimixr_mat_mult", (DL_FUNC) &_vimixr_mat_mult, 2},
+    {"_vimixr_mat_mult_t", (DL_FUNC) &_vimixr_mat_mult_t, 3},
     {"_vimixr_quadratic_form_diag", (DL_FUNC) &_vimixr_quadratic_form_diag, 2},
+    {"_vimixr_t_mat_mult", (DL_FUNC) &_vimixr_t_mat_mult, 3},
     {NULL, NULL, 0}
 };
 

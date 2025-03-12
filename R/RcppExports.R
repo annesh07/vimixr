@@ -10,7 +10,22 @@ cum_clustprop_var <- function(P1) {
 }
 
 #' @export
+mat_mult <- function(A, B) {
+    .Call(`_vimixr_mat_mult`, A, B)
+}
+
+#' @export
+mat_mult_t <- function(A, B, C) {
+    .Call(`_vimixr_mat_mult_t`, A, B, C)
+}
+
+#' @export
 quadratic_form_diag <- function(A, B) {
     .Call(`_vimixr_quadratic_form_diag`, A, B)
+}
+
+#' @export
+t_mat_mult <- function(A, B, C) {
+    .Call(`_vimixr_t_mat_mult`, A, B, C)
 }
 
