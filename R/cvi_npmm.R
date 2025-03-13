@@ -172,7 +172,7 @@
 #' Posterior logarithm of cluster allocation matrix \code{log Probability matrix}
 #' and Optimisation of the ELBO function \code{ELBO}
 #'
-#' @importFrom Rfast rowsums colsums spdinv Crossprod Tcrossprod mat.mult
+#' @importFrom Rfast rowsums colsums spdinv Crossprod eachcol.apply
 #' Diag.fill Diag.matrix
 #'
 #' @export
@@ -226,7 +226,7 @@ cvi_npmm <- function(X, variational_params,
 
   params$log_prob_matrix <- log_prob_matrix
   params$P <- exp(log_prob_matrix)
-  RP <- colsums(params$P)
+  RP <- Rfast::colsums(params$P)
 
   #updating the parameter list based on the conditions
   if(covariance_type == "diagonal") {

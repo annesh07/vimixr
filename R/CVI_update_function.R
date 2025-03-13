@@ -17,7 +17,7 @@
 #'
 #' @return Updated parameters
 #'
-#' @importFrom Rfast rowsums colsums spdinv Crossprod Tcrossprod mat.mult
+#' @importFrom Rfast rowsums colsums spdinv Crossprod eachcol.apply
 #' Diag.fill Diag.matrix
 #'
 #' @export
@@ -120,10 +120,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
       Mu00 <- mat_mult(Mu0, inv_C00)
 
       L21 <- sweep(L1, 1, L2, "/")
-      P230 <- (G1/G2)*Rfast::Tcrossprod(X, L21)
-      P231 <- diag(-0.5*(G1/G2)*Rfast::Tcrossprod(L21, L21))
+      P230 <- (G1/G2)*mat_mult(X, t(L21))
+      P231 <- -0.5*(G1/G2)*Rfast::rowsums(L21^2)
       P232 <- - 0.5*D*(G1/G2)/L2
-      P233 <- -0.5*(G1/G2)*diag(Rfast::Tcrossprod(X, X))
+      P233 <- -0.5*(G1/G2)*Rfast::rowsums(X^2)
       P_const <- - 0.5*(D*log(2*pi) - D*(digamma(G1) - log(G2)))
       #log probability matrix update
       Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
@@ -135,16 +135,16 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
       #update of parameters of eta's
       for (i in 1:T0){
-        L1[i,] <- Mu00 + (G1/G2)*Rfast::Crossprod(P[, i, drop=FALSE], X)
+        L1[i,] <- Mu00 + (G1/G2)*Rfast::colsums(X*P[, i])
         L2[i, 1] <- L20 + (G1/G2)*sum(P[, i])
       }
       L21 <- sweep(L1, 1, L2, "/")
 
       #updated parameters of the scalar multiple of the data covariance matrix
       G1 <- b1 + 0.5*D*sum(P)
-      G20 <- sweep(P, 1, 0.5*diag(Rfast::Tcrossprod(X, X)), "*")
-      G21 <- P*t(- Rfast::Tcrossprod(L21, X))
-      G22 <- sweep(P, 2, 0.5*diag(Rfast::Tcrossprod(L21, L21)), "*")
+      G20 <- sweep(P, 1, 0.5*Rfast::rowsums(X^2), "*")
+      G21 <- P*(-mat_mult(X, t(L21)))
+      G22 <- sweep(P, 2, 0.5*Rfast::rowsums(L21^2), "*")
       G23 <- sweep(P, 2, 0.5*D/L2, "*")
       G2 <- b2 + sum(G20) + sum(G21) + sum(G22) + sum(G23)
 
@@ -244,18 +244,18 @@ CVI_update_function <- function(fixed_variance = FALSE,
           nu <- nu0 + sum(P)
           V1 <- inv_V0
           for (n in 1:N){
-            V1 <- V1 + CP[n]*Rfast::Crossprod(X[n,, drop = FALSE],
-                                              X[n,, drop = FALSE])
+            V1 <- V1 + CP[n]*matrix(X[n,, drop = FALSE], nrow = D, ncol = D,
+                                    byrow = TRUE)*X[n,]
           }
           for (n in 1:N){
             for (i in 1:T0){
-              V1 <- V1 - P[n,i]*2*Rfast::Crossprod(X[n,, drop = FALSE],
-                                            L21[i,, drop = FALSE])
+              V1 <- V1 - P[n,i]*2*matrix(X[n,, drop = FALSE], nrow = D, ncol = D,
+                                         byrow = TRUE)*L21[i,]
             }
           }
           for (i in 1:T0){
-            V1 <- V1 + RP[i]*Rfast::Crossprod(L21[i,, drop = FALSE],
-                                              L21[i,, drop = FALSE]) +
+            V1 <- V1 + RP[i]*matrix(L21[i,, drop = FALSE], nrow = D, ncol = D,
+                                    byrow = TRUE)*L21[i,] +
               Rfast::spdinv(L2[,,i])
           }
           V <- Rfast::spdinv(V1)
@@ -290,7 +290,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           mean_L <- mean_lower + diag(sqrt(1/b1)*sqrt(pi)/beta(a1,0.5))
           diag(sigma_lower) <- (1/b1)*(a1 - (sqrt(pi)/beta(a1,0.5))^2)
           #expected inverse of C0; covariance matrix of data
-          inv_C0 <- Rfast::Tcrossprod(mean_L, mean_L) + diag(rowsums(sigma_lower))
+          inv_C0 <- mat_mult(mean_L, t(mean_L)) + diag(rowsums(sigma_lower))
 
           L21 <- matrix(0, nrow = T0, ncol = D)
           for (i in 1:T0){
@@ -340,8 +340,9 @@ CVI_update_function <- function(fixed_variance = FALSE,
           diag_L <- sqrt(1/b1)*sqrt(pi)/beta(a1,0.5)
           lowerL <- diag(diag_L)
           for (k in 2:D){
-            mu10 <- sweep(X[, 1:(k-1), drop=FALSE], 1,
-                                  rowsums(P)*X[,k, drop=FALSE], "*")
+            mu10 <- Rfast::eachcol.apply(X[, 1:(k-1), drop=FALSE],
+                                         Rfast::rowsums(P)*X[,k, drop=FALSE],
+                                          oper = "*")
 
             mu20 <- rep(0, (k-1))
             for (n in 1:N){
@@ -433,12 +434,13 @@ CVI_update_function <- function(fixed_variance = FALSE,
           for (i in 1:T0){
             V1[,,i] <- matrix(0, D, D)
             for (n in 1:N){
-              V1[,,i] <- V1[,,i] + P[n,i]*Rfast::Crossprod(X[n,,drop=FALSE],
-                                                           X[n,,drop=FALSE])
+              V1[,,i] <- V1[,,i] + P[n,i]*matrix(X[n,, drop = FALSE], nrow = D,
+                                                 ncol = D, byrow = TRUE)*X[n,]
             }
-            V1[,,i] <- V0 + (1/k0)*Rfast::Crossprod(Mu0, Mu0) + V1[,,i] +
+            V1[,,i] <- V0 + (1/k0)*matrix(Mu0, nrow = D, ncol = D,
+                                          byrow = TRUE)*c(Mu0) + V1[,,i] +
               diag(1e-6, D)
-            L1[i,] <- (Mu0/k0 + Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
+            L1[i,] <- (Mu0/k0 + Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
           }
 
           params$post_df_cs_cov <- nu1
@@ -493,11 +495,11 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
           for (i in 1:T0){
-            B1[i,] <- b0 + Rfast::colsums(sweep(X^2, 1, P[,i], "*"))
+            B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
             C01 <- 1/c0 + 0.5*abs(Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X))
             C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
-                         Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
+                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
           }
 
           params$post_shape_d_cs_cov <- a1
@@ -552,11 +554,11 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
           for (i in 1:T0){
-            B1[i,] <- b0 + Rfast::colsums(sweep(X^2, 1, P[,i], "*"))
+            B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
             C01 <- 0.5*(Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X))
             C1[,,i] <- Rfast::Diag.fill(C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
-                         Rfast::colsums(sweep(X, 1, P[,i], "*")))/(1/k0 + RP[i])
+                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
           }
 
           params$post_shape_d_cs_cov <- a1

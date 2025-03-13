@@ -61,9 +61,9 @@ elbo_varied_diagonal <- function(X, inverts, params){
     sum(e20) + sum(e21) + sum(e22)
 
   #the X's
-  e30 <- sweep(P, 1, -0.5*(G1/G2)*diag(Rfast::Tcrossprod(X, X)), "*")
-  e31 <- P*t((G1/G2)*(Rfast::Tcrossprod(L21, X)))
-  e32 <- sweep(P, 2, -0.5*(G1/G2)*diag(Rfast::Tcrossprod(L21, L21)), "*")
+  e30 <- sweep(P, 1, -0.5*(G1/G2)*Rfast::rowsums(X^2), "*") #alt for diag(Rfast::Tcrossprod(X,X))
+  e31 <- P*(G1/G2)*mat_mult(X, t(L21)) #alt for Rfast::Tcrossprod(X, L21)
+  e32 <- sweep(P, 2, -0.5*(G1/G2)*Rfast::rowsums(L21^2), "*")
   e33 <- sweep(P, 2, -0.5*(G1/G2)*D/L2, "*")
   e3 <- sum(P*(-0.5*D*log(2*pi) + 0.5*D*(digamma(G1) - log(G2))))
   + sum(e30) + sum(e31) + sum(e32) + sum(e33)
@@ -213,7 +213,7 @@ elbo_varied_decomposed_full <- function(X, inverts, params){
   mean_L <- mean_lower + diag(sqrt(1/b1)*sqrt(pi)/beta(a1,0.5))
   diag(sigma_lower) <- (1/b1)*(a1 - (sqrt(pi)/beta(a1,0.5))^2)
   #expected inverse of C0; covariance matrix of data
-  inv_C0 <- Rfast::Tcrossprod(mean_L, mean_L) + diag(rowsums(sigma_lower))
+  inv_C0 <- mat_mult(mean_L, t(mean_L)) + diag(rowsums(sigma_lower))
 
   #the eta's
   L21 <- matrix(0, nrow = T0, ncol = D)
