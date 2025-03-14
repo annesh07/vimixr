@@ -173,6 +173,7 @@
 #' and Optimisation of the ELBO function \code{ELBO}
 #'
 #' @importFrom Rfast rowsums colsums spdinv eachcol.apply Diag.fill Diag.matrix
+#' umap umap ggplot2 ggplot aes geom_point geom_line labs theme_minimal
 #'
 #' @export
 #'
@@ -392,13 +393,34 @@ cvi_npmm <- function(X, variational_params,
   clustering <- apply(Plog, MARGIN = 1, FUN=which.max)
   clust <- table(clustering) #clusters with proportions
   clustnum <- length(unique(clustering)) #number of clusters
+  #plots
+  umap_red <- umap::umap(X)
+  umap_df <- data.frame(umap1 = umap_red$layout[, 1],
+                        umap2 = umap_red$layout[, 2],
+                        Cluster = as.factor(clustering))
+  ggplot_umap <- ggplot2::ggplot(umap_df, ggplot2::aes(x = umap1, y = umap2,
+                                                       color = Cluster)) +
+    ggplot2::geom_point(size = 3, alpha = 0.8) +
+    ggplot2::labs(title = "UMAP Plot", x = "umap1", y = "umap2") +
+    ggplot2::theme_minimal()
+
+  Elbo <- unlist(lapply(elbo_values[-1], sum))
+  Elbo_df <- data.frame(x = 1:length(Elbo),
+                        y = Elbo)
+  ggplot_ELBO <- ggplot2::ggplot(Elbo_df, ggplot2::aes(x = x, y = y)) +
+    ggplot2::geom_line() +
+    ggplot2::labs(title = "ELBO Optimisation", x = "Iterations", y = "ELBO") +
+    ggplot2::theme_minimal()
+
   posterior <- list("alpha" = alpha0, "Cluster number" = clustnum,
                     "Cluster Proportion" = clust,
                     "log Probability matrix" = Plog)
   optimisation <- list("ELBO" = elbo_values,
                        "Iterations" = (length(elbo_values)-1))
 
-  output <-  list("posterior" = posterior, "optimisation" = optimisation)
+  output <-  list("posterior" = posterior, "optimisation" = optimisation,
+                  "UMAP visualisation" = ggplot_umap,
+                  "ELBO optimisation" = ggplot_ELBO)
   class(output) <- "CVIoutput"
 
   return(output)
