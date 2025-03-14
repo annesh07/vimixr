@@ -17,8 +17,7 @@
 #'
 #' @returns ELBO values
 #'
-#' @importFrom Rfast rowsums colsums spdinv Crossprod Tcrossprod mat.mult
-#' Diag.fill Diag.matrix
+#' @importFrom Rfast rowsums colsums spdinv eachcol.apply Diag.fill Diag.matrix
 #'
 #' @export
 #'

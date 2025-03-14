@@ -172,8 +172,7 @@
 #' Posterior logarithm of cluster allocation matrix \code{log Probability matrix}
 #' and Optimisation of the ELBO function \code{ELBO}
 #'
-#' @importFrom Rfast rowsums colsums spdinv Crossprod eachcol.apply
-#' Diag.fill Diag.matrix
+#' @importFrom Rfast rowsums colsums spdinv eachcol.apply Diag.fill Diag.matrix
 #'
 #' @export
 #'

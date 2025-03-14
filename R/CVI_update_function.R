@@ -17,8 +17,7 @@
 #'
 #' @return Updated parameters
 #'
-#' @importFrom Rfast rowsums colsums spdinv Crossprod eachcol.apply
-#' Diag.fill Diag.matrix
+#' @importFrom Rfast rowsums colsums spdinv eachcol.apply Diag.fill Diag.matrix
 #'
 #' @export
 #'
@@ -496,7 +495,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
           for (i in 1:T0){
             B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
-            C01 <- 1/c0 + 0.5*abs(Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X))
+            #alt for Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X)
+            C01 <- 1/c0 + 0.5*abs(t_mat_mult(X, diag(P[,i]), X))
             C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
                          Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
@@ -555,7 +555,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
           for (i in 1:T0){
             B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
-            C01 <- 0.5*(Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X))
+            C01 <- 0.5*t_mat_mult(X, diag(P[,i]), X)
             C1[,,i] <- Rfast::Diag.fill(C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
                          Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
