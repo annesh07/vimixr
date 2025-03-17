@@ -25,8 +25,8 @@ quadratic_form_diag <- function(A, B) {
 }
 
 #' @export
-sweep_2D <- function(A, B, operation, margin) {
-    .Call(`_vimixr_sweep_2D`, A, B, operation, margin)
+sweep_3D <- function(A, R, dims, n_threads = 4L) {
+    .Call(`_vimixr_sweep_3D`, A, R, dims, n_threads)
 }
 
 #' @export

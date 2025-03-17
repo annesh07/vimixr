@@ -70,17 +70,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// sweep_2D
-Eigen::MatrixXd sweep_2D(Eigen::MatrixXd& A, const Eigen::VectorXd& B, const std::string& operation, const int margin);
-RcppExport SEXP _vimixr_sweep_2D(SEXP ASEXP, SEXP BSEXP, SEXP operationSEXP, SEXP marginSEXP) {
+// sweep_3D
+NumericVector sweep_3D(NumericVector A, NumericVector R, IntegerVector dims, int n_threads);
+RcppExport SEXP _vimixr_sweep_3D(SEXP ASEXP, SEXP RSEXP, SEXP dimsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Eigen::MatrixXd& >::type A(ASEXP);
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type B(BSEXP);
-    Rcpp::traits::input_parameter< const std::string& >::type operation(operationSEXP);
-    Rcpp::traits::input_parameter< const int >::type margin(marginSEXP);
-    rcpp_result_gen = Rcpp::wrap(sweep_2D(A, B, operation, margin));
+    Rcpp::traits::input_parameter< NumericVector >::type A(ASEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type R(RSEXP);
+    Rcpp::traits::input_parameter< IntegerVector >::type dims(dimsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(sweep_3D(A, R, dims, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -104,7 +104,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_vimixr_mat_mult", (DL_FUNC) &_vimixr_mat_mult, 2},
     {"_vimixr_mat_mult_t", (DL_FUNC) &_vimixr_mat_mult_t, 3},
     {"_vimixr_quadratic_form_diag", (DL_FUNC) &_vimixr_quadratic_form_diag, 2},
-    {"_vimixr_sweep_2D", (DL_FUNC) &_vimixr_sweep_2D, 4},
+    {"_vimixr_sweep_3D", (DL_FUNC) &_vimixr_sweep_3D, 4},
     {"_vimixr_t_mat_mult", (DL_FUNC) &_vimixr_t_mat_mult, 3},
     {NULL, NULL, 0}
 };

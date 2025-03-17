@@ -17,8 +17,6 @@
 #'
 #' @return Updated parameters
 #'
-#' @importFrom Rfast rowsums colsums spdinv eachcol.apply Diag.fill Diag.matrix
-#'
 #' @export
 #'
 #' @examples
@@ -77,7 +75,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
       inv_C00 <- inverts[["inv_C00"]] #inverse of covariance of DP mean parameters
       Mu00 <- mat_mult(Mu0, inv_C00)
 
-      L21 <- sweep(L1, 1, L2, "/")
+      L21 <- L1/c(L2)
       P230 <- mat_mult_t(X, inv_C0, L21)
       P231 <- - 0.5*quadratic_form_diag(L21, inv_C0)
       P232 <- - 0.5*sum(diag(inv_C0))/L2
@@ -118,7 +116,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
       inv_C00 <- inverts[["inv_C00"]] #inverse of covariance of DP mean parameters
       Mu00 <- mat_mult(Mu0, inv_C00)
 
-      L21 <- sweep(L1, 1, L2, "/")
+      L21 <- L1/c(L2)
       P230 <- (G1/G2)*mat_mult(X, t(L21))
       P231 <- -0.5*(G1/G2)*Rfast::rowsums(L21^2)
       P232 <- - 0.5*D*(G1/G2)/L2
@@ -128,7 +126,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
       Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                  byrow = TRUE) + P233
       #log-sum-exp trick
-      Plog <- t(apply(Plog, 1, function(x){x - max(x) - log(sum(exp(x - max(x))))}))
+      Plog <- t(apply(Plog, 1, function(x){
+        mx <- max(x)
+        x - mx - log(sum(exp(x - mx)))
+      }))
       P <- exp(Plog)
       RP <- Rfast::colsums(P)
 
@@ -137,14 +138,14 @@ CVI_update_function <- function(fixed_variance = FALSE,
         L1[i,] <- Mu00 + (G1/G2)*Rfast::colsums(X*P[, i])
         L2[i, 1] <- L20 + (G1/G2)*sum(P[, i])
       }
-      L21 <- sweep(L1, 1, L2, "/")
+      L21 <- L1/c(L2)
 
       #updated parameters of the scalar multiple of the data covariance matrix
       G1 <- b1 + 0.5*D*sum(P)
-      G20 <- sweep(P, 1, 0.5*Rfast::rowsums(X^2), "*")
+      G20 <- P * c(0.5*Rfast::rowsums(X^2))
       G21 <- P*(-mat_mult(X, t(L21)))
-      G22 <- sweep(P, 2, 0.5*Rfast::rowsums(L21^2), "*")
-      G23 <- sweep(P, 2, 0.5*D/L2, "*")
+      G22 <- Rfast::eachrow(P, 0.5*Rfast::rowsums(L21^2), oper = "*")
+      G23 <- Rfast::eachrow(P, 0.5*D/L2, oper = "*")
       G2 <- b2 + sum(G20) + sum(G21) + sum(G22) + sum(G23)
 
       params$post_precision_scalar_eta <- L2
@@ -180,7 +181,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
       Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                  byrow = TRUE) + P233
       #log-sum-exp trick
-      Plog <- t(apply(Plog, 1, function(x){x - max(x) - log(sum(exp(x - max(x))))}))
+      Plog <- t(apply(Plog, 1, function(x){
+        mx <- max(x)
+        x - mx - log(sum(exp(x - mx)))
+      }))
       P <- exp(Plog)
       RP <- Rfast::colsums(P)
 
@@ -226,7 +230,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233
           #log-sum-exp trick
-          Plog <- t(apply(Plog, 1, function(x){x - max(x) - log(sum(exp(x - max(x))))}))
+          Plog <- t(apply(Plog, 1, function(x){
+            mx <- max(x)
+            x - mx - log(sum(exp(x - mx)))
+          }))
           P <- exp(Plog)
           RP <- Rfast::colsums(P)
           CP <- Rfast::rowsums(P)
@@ -241,22 +248,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           #updated parameters of C0
           nu <- nu0 + sum(P)
-          V1 <- inv_V0
-          for (n in 1:N){
-            V1 <- V1 + CP[n]*matrix(X[n,, drop = FALSE], nrow = D, ncol = D,
-                                    byrow = TRUE)*X[n,]
-          }
-          for (n in 1:N){
-            for (i in 1:T0){
-              V1 <- V1 - P[n,i]*2*matrix(X[n,, drop = FALSE], nrow = D, ncol = D,
-                                         byrow = TRUE)*L21[i,]
-            }
-          }
-          for (i in 1:T0){
-            V1 <- V1 + RP[i]*matrix(L21[i,, drop = FALSE], nrow = D, ncol = D,
-                                    byrow = TRUE)*L21[i,] +
-              Rfast::spdinv(L2[,,i])
-          }
+          V10 <- t_mat_mult(X, diag(CP), X)
+          V20 <- 2*t_mat_mult(X, P, L21)
+          V30 <- t_mat_mult(L21, diag(RP), L21)
+          V1 <- inv_V0 + V10 - V20 + V30
           V <- Rfast::spdinv(V1)
 
           params$post_df_cov <- nu
@@ -289,7 +284,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
           mean_L <- mean_lower + diag(sqrt(1/b1)*sqrt(pi)/beta(a1,0.5))
           diag(sigma_lower) <- (1/b1)*(a1 - (sqrt(pi)/beta(a1,0.5))^2)
           #expected inverse of C0; covariance matrix of data
-          inv_C0 <- mat_mult(mean_L, t(mean_L)) + diag(rowsums(sigma_lower))
+          inv_C0 <- mat_mult(mean_L, t(mean_L)) +
+            diag(Rfast::rowsums(sigma_lower))
 
           L21 <- matrix(0, nrow = T0, ncol = D)
           for (i in 1:T0){
@@ -304,7 +300,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233
           #log-sum-exp trick
-          Plog <- t(apply(Plog, 1, function(x){x - max(x) - log(sum(exp(x - max(x))))}))
+          Plog <- t(apply(Plog, 1, function(x){
+            mx <- max(x)
+            x - mx - log(sum(exp(x - mx)))
+          }))
           P <- exp(Plog)
           RP <- Rfast::colsums(P)
 
@@ -321,12 +320,11 @@ CVI_update_function <- function(fixed_variance = FALSE,
           a1 <- rep(a0, D) + 0.5*sum(P)
 
           b21 <- matrix(0, nrow = T0, ncol = D)
-          colPf0 <- colsums(P)
           for (i in 1:T0){
             b20 <- sweep(X, 2, L21[i,], "-")
-            b21[i,] <- colsums(P[,i]*(b20^2)) + colPf0[i]*diag(L2[,,i])
+            b21[i,] <- Rfast::colsums(P[,i]*(b20^2)) + RP[i]*diag(L2[,,i])
           }
-          b21 <- colsums(b21)
+          b21 <- Rfast::colsums(b21)
 
           b1 <- (b0 + 0.5*b21)
 
@@ -348,7 +346,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
               for (i in 1:T0){
                 mu20 <- mu20 +
                   P[n,i]*(L21[i, 1:(k-1), drop=FALSE]*X[n,k] +
-                            X[n, 1:(k-1), drop=FALSE]*L21[i,k])
+                              X[n, 1:(k-1), drop=FALSE]*L21[i,k])
               }
             }
             mu30 <- rep(0, (k-1))
@@ -358,7 +356,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
             }
 
             lower_L0 <- lowerL[1:(k-1), 1:(k-1), drop = FALSE]
-            muf0 <- sweep(lower_L0, 1, (mu10 - mu20 + mu30), "*")
+            muf0 <- lower_L0 * c(mu10 - mu20 + mu30)
             muf <- (mu0/c0 - muf0)/sigma_lower[k, 1:(k-1)]
 
             lowerL[k,] <- c(muf, diag_L[k], rep(0, (D - (length(muf)+1))))
@@ -396,7 +394,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           V1_inv <- array(apply(V1, 3, function(x){spdinv(x)}), dim = dim(V1))
           #expectation of inverse of data covariance matrix
-          inv_C0 <- sweep(V1_inv, 3, nu1, "*")
+          inv_C0 <- sweep_3D(V1_inv, nu1, c(D, D, T0))
           E_log_C0_1 <- apply(nu1, 2, function(x){sum(digamma(0.5*(x + 1 - c(1:D))))})
           E_log_C0_2 <- apply(V1_inv, 3, function(x){D*log(2) +
               determinant(x, logarithm = TRUE)$modulus})
@@ -406,13 +404,9 @@ CVI_update_function <- function(fixed_variance = FALSE,
           #updating the latent probability values
           P230 <- matrix(0, nrow = N, ncol = T0)
           P233 <- matrix(0, nrow = N, ncol = T0)
-          for (n in 1:N){
-            for (i in 1:T0){
-              P233[n,i] <- -0.5*mat_mult_t(X[n,,drop=FALSE], inv_C0[,,i],
-                                         X[n,,drop=FALSE])
-              P230[n,i] <- mat_mult_t(L1[i,,drop=FALSE],inv_C0[,,i],
-                                           X[n,,drop=FALSE])
-            }
+          for (i in 1:T0){
+            P233[,i] <- -0.5*quadratic_form_diag(X, inv_C0[,,i])
+            P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i], X)
           }
           P231 <- matrix(0, nrow = 1, ncol = T0)
           for (i in 1:T0){
@@ -425,20 +419,19 @@ CVI_update_function <- function(fixed_variance = FALSE,
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233
           #log-sum-exp trick
-          Plog <- t(apply(Plog, 1, function(x){x - max(x) - log(sum(exp(x - max(x))))}))
+          Plog <- t(apply(Plog, 1, function(x){
+            mx <- max(x)
+            x - mx - log(sum(exp(x - mx)))
+          }))
           P <- exp(Plog)
           RP <- Rfast::colsums(P)
 
           nu1 <- nu0 + matrix(RP, nrow=1)
           for (i in 1:T0){
-            V1[,,i] <- matrix(0, D, D)
-            for (n in 1:N){
-              V1[,,i] <- V1[,,i] + P[n,i]*matrix(X[n,, drop = FALSE], nrow = D,
-                                                 ncol = D, byrow = TRUE)*X[n,]
-            }
+            V10 <- t_mat_mult(X, diag(P[,i]), X)
             V1[,,i] <- V0 + (1/k0)*matrix(Mu0, nrow = D, ncol = D,
-                                          byrow = TRUE)*c(Mu0) + V1[,,i] +
-              diag(1e-6, D)
+                                          byrow = TRUE)*c(Mu0) +
+              V10 + diag(1e-6, D)
             L1[i,] <- (Mu0/k0 + Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
           }
 
@@ -468,14 +461,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           #updating the latent probability values
           P230 <- matrix(0, nrow = N, ncol = T0)
           P233 <- matrix(0, nrow = N, ncol = T0)
-          for (n in 1:N){
             for (i in 1:T0){
-              P233[n,i] <- -0.5*mat_mult_t(X[n,,drop=FALSE], inv_C0[,,i],
-                                                X[n,,drop=FALSE])
-              P230[n,i] <- mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i],
-                                           X[n,,drop=FALSE])
+              P233[,i] <- -0.5*quadratic_form_diag(X, inv_C0[,,i])
+              P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i], X)
             }
-          }
           P231 <- matrix(0, nrow = 1, ncol = T0)
           P232 <- P231
           for (i in 1:T0){
@@ -488,7 +477,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233
           #log-sum-exp trick
-          Plog <- t(apply(Plog, 1, function(x){x - max(x) - log(sum(exp(x - max(x))))}))
+          Plog <- t(apply(Plog, 1, function(x){
+            mx <- max(x)
+            x - mx - log(sum(exp(x - mx)))
+          }))
           P <- exp(Plog)
           RP <- Rfast::colsums(P)
 
@@ -528,13 +520,9 @@ CVI_update_function <- function(fixed_variance = FALSE,
           #updating the latent probability values
           P230 <- matrix(0, nrow = N, ncol = T0)
           P233 <- matrix(0, nrow = N, ncol = T0)
-          for (n in 1:N){
-            for (i in 1:T0){
-              P233[n,i] <- -0.5*mat_mult_t(X[n,,drop=FALSE], inv_C0[,,i],
-                                                X[n,,drop=FALSE])
-              P230[n,i] <- mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i],
-                                           X[n,,drop=FALSE])
-            }
+          for (i in 1:T0){
+            P233[,i] <- -0.5*quadratic_form_diag(X, inv_C0[,,i])
+            P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i], X)
           }
           P231 <- matrix(0, nrow = 1, ncol = T0)
           P232 <- P231
@@ -548,7 +536,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233
           #log-sum-exp trick
-          Plog <- t(apply(Plog, 1, function(x){x - max(x) - log(sum(exp(x - max(x))))}))
+          Plog <- t(apply(Plog, 1, function(x){
+            mx <- max(x)
+            x - mx - log(sum(exp(x - mx)))
+          }))
           P <- exp(Plog)
           RP <- Rfast::colsums(P)
 
@@ -596,8 +587,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
   #update of the rate parameter of alpha
   alpha0 <- l0/log(N)
   if (l0 > 1){
-    a_eni <- colsums(Pf0[,1:l0])
-    a_vni <- colsums(Pf0[,1:l0]*(1-Pf0[,1:l0]))
+    a_eni <- Rfast::colsums(Pf0[,1:l0])
+    a_vni <- Rfast::colsums(Pf0[,1:l0]*(1-Pf0[,1:l0]))
     a_enj <- cum_clustprop(Pf0[,1:l0])
     a_vnj <- cum_clustprop_var(Pf0[,1:l0])
     W20 <- log(alpha0 + a_eni[1:(l0 - 1)] + a_enj[1:(l0 - 1)]) -

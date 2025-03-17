@@ -1,3 +1,18 @@
+#' Function to check the list of type-specific arguments
+#'
+#' @param params the list of required parameters
+#' @param fixed_variance whether covariance is assumed fixed or not; can be TRUE or FALSE
+#' @param covariance_type structure of covariance matrix; can be "diagonal" or "full"
+#' @param cluster_specific_covariance whether covariance matrix is cluster specific
+#' or not; can be TRUE or FALSE
+#' @param variance_prior_type prior distribution for the covariance matrix; can
+#' be "IW" or "decomposed" when cluster_specific_covariance = FALSE,
+#' or can be "IW", "sparse" or "off-diagonal normal" otherwise
+#'
+#' @return stops the code if the required list of arguments are not present
+#' @export
+#'
+#' @examples
 params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal",
                          cluster_specific_covariance=TRUE,
                          variance_prior_type=c("IW", "decomposed", "sparse",

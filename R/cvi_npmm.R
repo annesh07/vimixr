@@ -172,8 +172,9 @@
 #' Posterior logarithm of cluster allocation matrix \code{log Probability matrix}
 #' and Optimisation of the ELBO function \code{ELBO}
 #'
-#' @importFrom Rfast rowsums colsums spdinv eachcol.apply Diag.fill Diag.matrix
-#' umap umap ggplot2 ggplot aes geom_point geom_line labs theme_minimal
+#' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
+#' Diag.matrix umap umap ggplot2 ggplot aes geom_point geom_line labs
+#' theme_minimal
 #'
 #' @export
 #'

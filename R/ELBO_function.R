@@ -17,8 +17,6 @@
 #'
 #' @returns ELBO values
 #'
-#' @importFrom Rfast rowsums colsums spdinv eachcol.apply Diag.fill Diag.matrix
-#'
 #' @export
 #'
 #' @examples
