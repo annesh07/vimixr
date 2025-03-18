@@ -15,7 +15,9 @@ License: MIT + file LICENSE
 Imports: 
     Rcpp,
     RcppEigen,
-    Rfast
+    Rfast,
+    umap,
+    ggplot2
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

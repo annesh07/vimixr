@@ -169,11 +169,21 @@
 #' distributed ('off-diagonal normal')
 #' @param ... additional parameters, further details given below
 #'
-#' @returns Posterior DP concentration parameter \code{alpha},
-#' Posterior number of clusters \code{Cluster number},
-#' Posterior proportions of clusters \code{Cluster Proportion},
-#' Posterior logarithm of cluster allocation matrix \code{log Probability matrix}
-#' and Optimisation of the ELBO function \code{ELBO}
+#' @returns The following objects are returned by \code{vimixr} \describe{
+#'  \item{\code{alpha}: posterior DP concentration parameter}{}
+#'  \item{\code{Cluster number}: number of clusters from
+#'        posterior probability allocation matrix}{}
+#'  \item{\code{Cluster Proportion}: cluster proportions from
+#'        posterior probability allocation matrix}{}
+#'  \item{\code{log Probability matrix}: log of posterior probability allocation
+#'        matrix}
+#'  \item{\code{ELBO}: Optimisation of the ELBO function}{}
+#'  \item{\code{Iterations}: Number of iterations required for convergence}{}
+#'  \item{\code{UMAP visualisation}: A UMAP plot to visualize the clustering
+#'        of data based on cluster labels}{}
+#'  \item{\code{ELBO optimisation}: A line plot to visualize the ELBO
+#'        optimisation}{}
+#' }
 #'
 #' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
 #' Diag.matrix
@@ -185,22 +195,141 @@
 #'
 #' @examples
 #'
-#' X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
+#' X <- rbi  nd(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #'            matrix(rnorm(100, m=3, sd=0.5), ncol=2))
-#' prior_precision_scalar_eta = 0.001
-#' post_precision_scalar_eta = matrix(0.001, 20, 1)
-#' cov_data = diag(ncol(X))
+#'
+#' #for fixed-diagonal
 #' cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
 #'          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
 #'          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
 #'          post_mean_eta = matrix(0.001, 20, ncol(X)),
 #'          log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
 #'                              function(x){x/sum(x)})), maxit = 1000,
-#'          fixed_variance=TRUE, covariance_type="diagonal",
-#'          prior_precision_scalar_eta,
-#'          post_precision_scalar_eta,
-#'          cov_data)
+#'          fixed_variance = TRUE, covariance_type = "diagonal",
+#'          prior_precision_scalar_eta = 0.001,
+#'          post_precision_scalar_eta = matrix(0.001, 20, 1),
+#'          cov_data = diag(ncol(X)))
 #'
+#' #for varied-diagonal
+#' cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#'            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#'            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#'            post_mean_eta = matrix(0.001, 20, ncol(X)),
+#'            log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+#'                                      function(x){x/sum(x)})), maxit = 1000,
+#'            covariance_type = "diagonal",fixed_variance = FALSE,
+#'            cluster_specific_covariance = TRUE,
+#'            variance_prior_type = "off-diagonal normal",
+#'            prior_shape_scalar_cov = 0.001,
+#'            prior_rate_scalar_cov = 0.001,
+#'            post_shape_scalar_cov = 0.001,
+#'            post_rate_scalar_cov = 0.001,
+#'            prior_precision_scalar_eta = 0.001,
+#'            post_precision_scalar_eta = matrix(0.001, 20, 1))
+#'
+#' #for fixed-full
+#' cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#'          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#'          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#'          post_mean_eta = matrix(0.001, 20, ncol(X)),
+#'          log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+#'                                    function(x){x/sum(x)})), maxit = 1000,
+#'          covariance_type = "full",fixed_variance = TRUE,
+#'          cluster_specific_covariance = TRUE,
+#'          variance_prior_type = "off-diagonal normal",
+#'          post_cov_eta = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
+#'          prior_cov_eta = 1000*diag(ncol(X)),
+#'          cov_data = diag(ncol(X)))
+#'
+#' #for varied-full-IW
+#' cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#'          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#'          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#'          post_mean_eta = matrix(0.001, 20, ncol(X)),
+#'          log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+#'                                    function(x){x/sum(x)})), maxit = 1000,
+#'          covariance_type = "full",fixed_variance = FALSE,
+#'          cluster_specific_covariance = FALSE,
+#'          variance_prior_type = "IW",
+#'          prior_df_cov = ncol(X) + 2,
+#'          prior_scale_cov = diag(ncol(X))*100,
+#'          post_df_cov = ncol(X) + 2,
+#'          post_scale_cov = diag(ncol(X)),
+#'          post_cov_eta = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
+#'          prior_cov_eta = 1000*diag(ncol(X)))
+#'
+#' #for varied-full-decomposed
+#'  cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#'           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#'           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#'           post_mean_eta = matrix(0.001, 20, ncol(X)),
+#'           log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+#'                                     function(x){x/sum(x)})), maxit = 1000,
+#'           covariance_type = "full",fixed_variance = FALSE,
+#'           cluster_specific_covariance = FALSE,
+#'           variance_prior_type = "decomposed",
+#'           prior_shape_diag_decomp = 0.001,
+#'           prior_rate_diag_decomp = 0.001,
+#'           prior_mean_offdiag_decomp = 0,
+#'           prior_var_offdiag_decomp = 1,
+#'           post_shape_diag_decomp = matrix(0.001, 1, ncol(X)),
+#'           post_rate_diag_decomp = matrix(0.001, 1, ncol(X)),
+#'           post_mean_offdiag_decomp = matrix(0, 1, 0.5*ncol(X)*(ncol(X)-1)),
+#'           post_var_offdiag_decomp = matrix(0.001, 1, 0.5*ncol(X)*(ncol(X)-1)),
+#'           post_cov_eta = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
+#'           prior_cov_eta = 1000*diag(ncol(X)))
+#'
+#' #for varied-cs-IW
+#' cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#'           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#'           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#'           post_mean_eta = matrix(0.001, 20, ncol(X)),
+#'           log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+#'                                     function(x){x/sum(x)})), maxit = 1000,
+#'           covariance_type = "full",fixed_variance = FALSE,
+#'           cluster_specific_covariance = TRUE,
+#'           variance_prior_type = "IW",
+#'           prior_df_cs_cov = ncol(X) + 2,
+#'           prior_scale_cs_cov = diag(ncol(X)),
+#'           post_df_cs_cov = matrix(rep(ncol(X) + 2, 20), nrow = 1),
+#'           post_scale_cs_cov = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
+#'           scaling_cov_eta = 1)
+#'
+#' #for varied-cs-sparse
+#' cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#'           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#'           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#'           post_mean_eta = matrix(0.001, 20, ncol(X)),
+#'           log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+#'                                     function(x){x/sum(x)})), maxit = 1000,
+#'           covariance_type="full",fixed_variance=FALSE,
+#'           cluster_specific_covariance = TRUE,
+#'           variance_prior_type = "sparse",
+#'           prior_shape_d_cs_cov = 0.001,
+#'           prior_rate_d_cs_cov = 0.001,
+#'           prior_var_offd_cs_cov = 0.001,
+#'           post_shape_d_cs_cov = matrix(0.001, 1, 20),
+#'           post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
+#'           post_var_offd_cs_cov = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
+#'           scaling_cov_eta = 1)
+#'
+#' #for varied-cs-offd-normal
+#' cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#'           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+#'           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+#'           post_mean_eta = matrix(0.001, 20, ncol(X)),
+#'           log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+#'                                     function(x){x/sum(x)})), maxit = 1000,
+#'           covariance_type="full",fixed_variance=FALSE,
+#'           cluster_specific_covariance = TRUE,
+#'           variance_prior_type = "off-diagonal normal",
+#'           prior_shape_d_cs_cov = 0.001,
+#'           prior_rate_d_cs_cov = 0.001,
+#'           prior_var_offd_cs_cov = 0.001,
+#'           post_shape_d_cs_cov = matrix(0.001, 1, 20),
+#'           post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
+#'           post_mean_offd_cs_cov = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
+#'           scaling_cov_eta = 1)
 #'
 cvi_npmm <- function(X, variational_params,
                      prior_shape_alpha, prior_rate_alpha,
