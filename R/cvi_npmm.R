@@ -124,6 +124,9 @@
 #'      \item{\code{prior_rate_d_cs_cov}: a non-negative matrix as rate
 #'            parameter for cluster-specific Gamma prior of the diagonal
 #'            elements}{}
+#'      \item{\code{prior_var_offd_cs_cov}: a non-negative scalar as variance
+#'            parameter for cluster-specific Normal priors of the off-diagonal
+#'            elements}{}
 #'      \item{\code{post_shape_d_cs_cov}: initial value for posterior update of
 #'            the diagonal shape parameters}{}
 #'      \item{\code{post_rate_d_cs_cov}: initial value for posterior update of
@@ -173,7 +176,9 @@
 #' and Optimisation of the ELBO function \code{ELBO}
 #'
 #' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
-#' Diag.matrix umap umap ggplot2 ggplot aes geom_point geom_line labs
+#' Diag.matrix
+#' @importFrom umap umap
+#' @importFrom ggplot2 ggplot aes geom_point geom_line labs
 #' theme_minimal
 #'
 #' @export
@@ -206,11 +211,13 @@ cvi_npmm <- function(X, variational_params,
                      covariance_type="full", fixed_variance=FALSE,
                      cluster_specific_covariance=TRUE,
                      variance_prior_type=c("IW", "decomposed", "sparse",
-                                           "off-diagonal normal"), ...){
+                                           "off-diagonal normal"),
+                     ...
+                     ){
   N <- nrow(X)
   D <- ncol(X)
   T0 <- variational_params
-
+  varargs <- list(...)
   params <- list()
   inverts <- list()
 
@@ -233,29 +240,29 @@ cvi_npmm <- function(X, variational_params,
   if(covariance_type == "diagonal") {
 
     if(fixed_variance) {
-      params$prior_precision_scalar_eta <- prior_precision_scalar_eta
-      params$post_precision_scalar_eta <- post_precision_scalar_eta
-      params$cov_data <- cov_data
+      params$prior_precision_scalar_eta <- varargs$prior_precision_scalar_eta
+      params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
+      params$cov_data <- varargs$cov_data
       params_check(params, fixed_variance, covariance_type,
                    cluster_specific_covariance,
                    variance_prior_type)
 
-      C00 <- diag(D)/prior_precision_scalar_eta #covariance of DP mean parameters
-      inverts[["inv_C0"]] <- Rfast::spdinv(cov_data)
+      C00 <- diag(D)/varargs$prior_precision_scalar_eta #covariance of DP mean parameters
+      inverts[["inv_C0"]] <- Rfast::spdinv(varargs$cov_data)
       inverts[["inv_C00"]] <- Rfast::spdinv(C00)
 
     } else {
-      params$prior_shape_scalar_cov <- prior_shape_scalar_cov
-      params$prior_rate_scalar_cov <- prior_rate_scalar_cov
-      params$post_shape_scalar_cov <- post_shape_scalar_cov
-      params$post_rate_scalar_cov <- post_rate_scalar_cov
-      params$post_precision_scalar_eta <- post_precision_scalar_eta
-      params$prior_precision_scalar_eta <- prior_precision_scalar_eta
+      params$prior_shape_scalar_cov <- varargs$prior_shape_scalar_cov
+      params$prior_rate_scalar_cov <- varargs$prior_rate_scalar_cov
+      params$post_shape_scalar_cov <- varargs$post_shape_scalar_cov
+      params$post_rate_scalar_cov <- varargs$post_rate_scalar_cov
+      params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
+      params$prior_precision_scalar_eta <- varargs$prior_precision_scalar_eta
       params_check(params, fixed_variance, covariance_type,
                    cluster_specific_covariance,
                    variance_prior_type)
 
-      C00 <- diag(D)/prior_precision_scalar_eta #covariance of DP mean parameters
+      C00 <- diag(D)/varargs$prior_precision_scalar_eta #covariance of DP mean parameters
       inverts[["inv_C00"]] <- Rfast::spdinv(C00)
 
     }
@@ -263,50 +270,50 @@ cvi_npmm <- function(X, variational_params,
   } else if(covariance_type == "full") {
 
     if(fixed_variance) {
-      params$post_cov_eta <- post_cov_eta
-      params$cov_data <- cov_data
-      params$prior_cov_eta <- prior_cov_eta
+      params$post_cov_eta <- varargs$post_cov_eta
+      params$cov_data <- varargs$cov_data
+      params$prior_cov_eta <- varargs$prior_cov_eta
       params_check(params, fixed_variance, covariance_type,
                    cluster_specific_covariance,
                    variance_prior_type)
 
-      inverts[["inv_C0"]] <- Rfast::spdinv(cov_data)
-      inverts[["inv_C00"]] <- Rfast::spdinv(prior_cov_eta)
+      inverts[["inv_C0"]] <- Rfast::spdinv(varargs$cov_data)
+      inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
 
 
     } else {
       if(!cluster_specific_covariance) {
         if(variance_prior_type == "IW"){
-          params$prior_df_cov <- prior_df_cov
-          params$prior_scale_cov <- prior_scale_cov
-          params$post_df_cov <- post_df_cov
-          params$post_scale_cov <- post_scale_cov
-          params$post_cov_eta <- post_cov_eta
-          params$prior_cov_eta <- prior_cov_eta
+          params$prior_df_cov <- varargs$prior_df_cov
+          params$prior_scale_cov <- varargs$prior_scale_cov
+          params$post_df_cov <- varargs$post_df_cov
+          params$post_scale_cov <- varargs$post_scale_cov
+          params$post_cov_eta <- varargs$post_cov_eta
+          params$prior_cov_eta <- varargs$prior_cov_eta
           params_check(params, fixed_variance, covariance_type,
                        cluster_specific_covariance,
                        variance_prior_type)
 
-          inverts[["inv_V0"]] <- Rfast::spdinv(prior_scale_cov)
-          inverts[["inv_C00"]] <- Rfast::spdinv(prior_cov_eta)
+          inverts[["inv_V0"]] <- Rfast::spdinv(varargs$prior_scale_cov)
+          inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
 
 
         } else if (variance_prior_type == "decomposed"){
-          params$prior_shape_diag_decomp <- prior_shape_diag_decomp
-          params$prior_rate_diag_decomp <- prior_rate_diag_decomp
-          params$prior_mean_offdiag_decomp <- prior_mean_offdiag_decomp
-          params$prior_var_offdiag_decomp <- prior_var_offdiag_decomp
-          params$post_shape_diag_decomp <- post_shape_diag_decomp
-          params$post_rate_diag_decomp <- post_rate_diag_decomp
-          params$post_mean_offdiag_decomp <- post_mean_offdiag_decomp
-          params$post_var_offdiag_decomp <- post_var_offdiag_decomp
-          params$post_cov_eta <- post_cov_eta
-          params$prior_cov_eta <- prior_cov_eta
+          params$prior_shape_diag_decomp <- varargs$prior_shape_diag_decomp
+          params$prior_rate_diag_decomp <- varargs$prior_rate_diag_decomp
+          params$prior_mean_offdiag_decomp <- varargs$prior_mean_offdiag_decomp
+          params$prior_var_offdiag_decomp <- varargs$prior_var_offdiag_decomp
+          params$post_shape_diag_decomp <- varargs$post_shape_diag_decomp
+          params$post_rate_diag_decomp <- varargs$post_rate_diag_decomp
+          params$post_mean_offdiag_decomp <- varargs$post_mean_offdiag_decomp
+          params$post_var_offdiag_decomp <- varargs$post_var_offdiag_decomp
+          params$post_cov_eta <- varargs$post_cov_eta
+          params$prior_cov_eta <- varargs$prior_cov_eta
           params_check(params, fixed_variance, covariance_type,
                        cluster_specific_covariance,
                        variance_prior_type)
 
-          inverts[["inv_C00"]] <- Rfast::spdinv(prior_cov_eta)
+          inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
 
 
         } else {
@@ -316,36 +323,37 @@ cvi_npmm <- function(X, variational_params,
 
       }else{
         if(variance_prior_type == "IW"){
-          params$prior_df_cs_cov <- prior_df_cs_cov
-          params$prior_scale_cs_cov <- prior_scale_cs_cov
-          params$post_df_cs_cov <- post_df_cs_cov
-          params$post_scale_cs_cov <- post_scale_cs_cov
-          params$scaling_cov_eta <- scaling_cov_eta
+          params$prior_df_cs_cov <- varargs$prior_df_cs_cov
+          params$prior_scale_cs_cov <- varargs$prior_scale_cs_cov
+          params$post_df_cs_cov <- varargs$post_df_cs_cov
+          params$post_scale_cs_cov <- varargs$post_scale_cs_cov
+          params$scaling_cov_eta <- varargs$scaling_cov_eta
           params_check(params, fixed_variance, covariance_type,
                        cluster_specific_covariance,
                        variance_prior_type)
 
 
         } else if (variance_prior_type == "sparse"){
-          params$prior_shape_d_cs_cov <- prior_shape_d_cs_cov
-          params$prior_rate_d_cs_cov <- prior_rate_d_cs_cov
-          params$prior_var_offd_cs_cov <- prior_var_offd_cs_cov
-          params$post_shape_d_cs_cov <- post_shape_d_cs_cov
-          params$post_rate_d_cs_cov <- post_rate_d_cs_cov
-          params$post_var_offd_cs_cov <- post_var_offd_cs_cov
-          params$scaling_cov_eta <- scaling_cov_eta
+          params$prior_shape_d_cs_cov <- varargs$prior_shape_d_cs_cov
+          params$prior_rate_d_cs_cov <- varargs$prior_rate_d_cs_cov
+          params$prior_var_offd_cs_cov <- varargs$prior_var_offd_cs_cov
+          params$post_shape_d_cs_cov <- varargs$post_shape_d_cs_cov
+          params$post_rate_d_cs_cov <- varargs$post_rate_d_cs_cov
+          params$post_var_offd_cs_cov <- varargs$post_var_offd_cs_cov
+          params$scaling_cov_eta <- varargs$scaling_cov_eta
           params_check(params, fixed_variance, covariance_type,
                        cluster_specific_covariance,
                        variance_prior_type)
 
 
         } else if (variance_prior_type == "off-diagonal normal"){
-          params$prior_shape_d_cs_cov <- prior_shape_d_cs_cov
-          params$prior_rate_d_cs_cov <- prior_rate_d_cs_cov
-          params$post_shape_d_cs_cov <- post_shape_d_cs_cov
-          params$post_rate_d_cs_cov <- post_rate_d_cs_cov
-          params$post_mean_offd_cs_cov <- post_mean_offd_cs_cov
-          params$scaling_cov_eta <- scaling_cov_eta
+          params$prior_shape_d_cs_cov <- varargs$prior_shape_d_cs_cov
+          params$prior_rate_d_cs_cov <- varargs$prior_rate_d_cs_cov
+          params$prior_var_offd_cs_cov <- varargs$prior_var_offd_cs_cov
+          params$post_shape_d_cs_cov <- varargs$post_shape_d_cs_cov
+          params$post_rate_d_cs_cov <- varargs$post_rate_d_cs_cov
+          params$post_mean_offd_cs_cov <- varargs$post_mean_offd_cs_cov
+          params$scaling_cov_eta <- varargs$scaling_cov_eta
           params_check(params, fixed_variance, covariance_type,
                        cluster_specific_covariance,
                        variance_prior_type)

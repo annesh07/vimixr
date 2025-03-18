@@ -4,6 +4,9 @@
 #' @param inverts a list of inverses
 #' @param params a list of required arguments
 #'
+#' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
+#' Diag.matrix
+#'
 #' @export
 #'
 #' @examples
@@ -412,6 +415,7 @@ elbo_cs_offd_normal <- function(X, inverts, params){
   L1 <- params$post_mean_eta
   a0 <- params$prior_shape_d_cs_cov
   b0 <- params$prior_rate_d_cs_cov
+  c0 <- params$prior_var_offd_cs_cov
   a1 <- params$post_shape_d_cs_cov
   B1 <- params$post_rate_d_cs_cov
   C1 <- params$post_mean_offd_cs_cov
@@ -447,7 +451,7 @@ elbo_cs_offd_normal <- function(X, inverts, params){
     e210[i] <- sum(a0*log(b0) - lgamma(a0) +
                      (a0 - 1)*(digamma(a1[1,i]) - log(B1[i,])) - b0*a1[1,i]/B1[i,])
   }
-  e21 <- sum(e210) + sum(-0.5*log(2*pi*0.001) - 0.5*(1 + C1[!diag(D)]^2)/0.001)
+  e21 <- sum(e210) + sum(-0.5*log(2*pi*c0) - 0.5*(1 + C1[!diag(D)]^2)/c0)
   e2 <- e20 + e21
 
   #the data X
@@ -466,7 +470,7 @@ elbo_cs_offd_normal <- function(X, inverts, params){
     e420[i] <- sum(a1[1,i]*log(B1[i,]) - lgamma(a1[1,i]) +
                      (a1[1,i] -1)*(digamma(a1[1,i]) - log(B1[i,])) - a1[1,i])
   }
-  e4 <- sum(e420) + (D^2 - D)*(-0.5*log(2*pi*0.001) - 0.5/0.001)
+  e4 <- sum(e420) + (D^2 - D)*(-0.5*log(2*pi*c0) - 0.5/c0)
 
   return(c("e_mean_cov"=e2, "e_data"=e3, "me_var"=-e4))
 }

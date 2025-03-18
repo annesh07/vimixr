@@ -17,6 +17,9 @@
 #'
 #' @return Updated parameters
 #'
+#' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
+#' Diag.matrix
+#'
 #' @export
 #'
 #' @examples
@@ -506,6 +509,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           a0 <- params$prior_shape_d_cs_cov
           b0 <- params$prior_rate_d_cs_cov
+          c0 <- params$prior_var_offd_cs_cov
           a1 <- params$post_shape_d_cs_cov
           B1 <- params$post_rate_d_cs_cov
           C1 <- params$post_mean_offd_cs_cov
@@ -554,7 +558,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           params$post_shape_d_cs_cov <- a1
           params$post_rate_d_cs_cov <- B1
-          params$post_mean_offd_cs_cov <- 0.001*C1
+          params$post_mean_offd_cs_cov <- c0*C1
           params$post_mean_eta <- L1
           params$log_prob_matrix <- Plog
           params$P <- P

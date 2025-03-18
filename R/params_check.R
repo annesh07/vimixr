@@ -141,6 +141,7 @@ params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal
         } else if (variance_prior_type == "off-diagonal normal"){
           if(is.null(params$prior_shape_d_cs_cov) &&
              is.null(params$prior_rate_d_cs_cov) &&
+             is.null(params$prior_var_offd_cs_cov) &&
              is.null(params$post_shape_d_cs_cov) &&
              is.null(params$post_rate_d_cs_cov) &&
              is.null(params$post_mean_offd_cs_cov) &&
@@ -151,6 +152,7 @@ params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal
                  variance_prior_type = 'off-diagonal normal'
                  require the following argument to be non-null:
                  'prior_shape_d_cs_cov', 'prior_rate_d_cs_cov',
+                 'prior_var_offd_cs_cov',
                  'post_shape_d_cs_cov', 'post_rate_d_cs_cov',
                  'post_mean_offd_cs_cov', 'scaling_cov_eta'")
           }
