@@ -168,6 +168,11 @@
 #' and Laplace distributed ('sparse') or element-wise Gamma and Normal
 #' distributed ('off-diagonal normal')
 #' @param ... additional parameters, further details given below
+#' @param PC1 The first PCA component
+#' @param PC2 The second PCA component
+#' @param x x-axis variable for the PCA plot
+#' @param y y-axis variable for the PCA plot
+#' @param Cluster Clustering obtained from posterior latent allocation matrix
 #'
 #' @returns The following objects are returned by \code{vimixr} \describe{
 #'  \item{\code{alpha}: posterior DP concentration parameter}{}
@@ -187,7 +192,6 @@
 #'
 #' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
 #' Diag.matrix
-#' @importFrom umap umap
 #' @importFrom ggplot2 ggplot aes geom_point geom_line labs
 #' theme_minimal
 #'
@@ -195,7 +199,7 @@
 #'
 #' @examples
 #'
-#' X <- rbi  nd(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
+#' X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #'            matrix(rnorm(100, m=3, sd=0.5), ncol=2))
 #'
 #' #for fixed-diagonal
@@ -517,7 +521,6 @@ cvi_npmm <- function(X, variational_params,
     elbo_values[[m+1]] <- ELBO_function(fixed_variance, covariance_type,
                                         cluster_specific_covariance,
                                         variance_prior_type, X, inverts, params)
-
     if (abs(sum(elbo_values[[m]]) - sum(elbo_values[[m + 1]])) < 0.000001 ){
       break
     }
@@ -532,14 +535,14 @@ cvi_npmm <- function(X, variational_params,
   clust <- table(clustering) #clusters with proportions
   clustnum <- length(unique(clustering)) #number of clusters
   #plots
-  umap_red <- umap::umap(X)
-  umap_df <- data.frame(umap1 = umap_red$layout[, 1],
-                        umap2 = umap_red$layout[, 2],
-                        Cluster = as.factor(clustering))
-  ggplot_umap <- ggplot2::ggplot(umap_df, ggplot2::aes(x = umap1, y = umap2,
+  pca <- prcomp(X1)
+  pca_df <- data.frame(PC1 = pca$x[,1],
+                       PC2 = pca$x[,2],
+                       Cluster = as.factor(clustering))
+  ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = PC1, y = PC2,
                                                        color = Cluster)) +
     ggplot2::geom_point(size = 3, alpha = 0.8) +
-    ggplot2::labs(title = "UMAP Plot", x = "umap1", y = "umap2") +
+    ggplot2::labs(title = "PCA Plot", x = "PCA1", y = "PCA2") +
     ggplot2::theme_minimal()
 
   Elbo <- unlist(lapply(elbo_values[-1], sum))
@@ -557,7 +560,7 @@ cvi_npmm <- function(X, variational_params,
                        "Iterations" = (length(elbo_values)-1))
 
   output <-  list("posterior" = posterior, "optimisation" = optimisation,
-                  "UMAP visualisation" = ggplot_umap,
+                  "PCA visualisation" = ggplot_pca,
                   "ELBO optimisation" = ggplot_ELBO)
   class(output) <- "CVIoutput"
 

@@ -254,7 +254,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           V10 <- t_mat_mult(X, diag(CP), X)
           V20 <- 2*t_mat_mult(X, P, L21)
           V30 <- t_mat_mult(L21, diag(RP), L21)
-          V1 <- inv_V0 + V10 - V20 + V30
+          #missing solve(L2[,,i])
+          inv_L2 <- apply(L2, 3, function(x){Rfast::spdinv(x)})
+          V40 <- sweep_3D(inv_L2, RP, c(D, D, T0))
+          V1 <- inv_V0 + V10 - V20 + V30 + rowSums(V40, dims = 2)
           V <- Rfast::spdinv(V1)
 
           params$post_df_cov <- nu
@@ -359,13 +362,11 @@ CVI_update_function <- function(fixed_variance = FALSE,
             }
 
             lower_L0 <- lowerL[1:(k-1), 1:(k-1), drop = FALSE]
-            muf0 <- lower_L0 * c(mu10 - mu20 + mu30)
+            muf0 <- Rfast::eachcol.apply(lower_L0, (mu10 - mu20 + mu30), oper = "*")
             muf <- (mu0/c0 - muf0)/sigma_lower[k, 1:(k-1)]
-
             lowerL[k,] <- c(muf, diag_L[k], rep(0, (D - (length(muf)+1))))
           }
           mu1 <- lowerL[lower.tri(lowerL, diag = FALSE)]
-
           a1 <- matrix(a1, nrow = 1)
           b1 <- matrix(b1, nrow = 1)
           mu1 <- matrix(mu1, nrow = 1)
@@ -457,21 +458,18 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           #expectation of inverse of C0, data covariance matrix
           inv_C0 <- array(0, c(D, D, T0))
-          for (i in 1:T0){
-            inv_C0[,,i] <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
-          }
+
 
           #updating the latent probability values
           P230 <- matrix(0, nrow = N, ncol = T0)
           P233 <- matrix(0, nrow = N, ncol = T0)
-            for (i in 1:T0){
-              P233[,i] <- -0.5*quadratic_form_diag(X, inv_C0[,,i])
-              P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i], X)
-            }
           P231 <- matrix(0, nrow = 1, ncol = T0)
-          P232 <- P231
+          P232 <- matrix(0, nrow = 1, ncol = T0)
           for (i in 1:T0){
-            P231[1,i] <- -0.5*mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i],
+            inv_C0[,,i] <- temp <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
+            P233[,i] <- -0.5*quadratic_form_diag(X, temp)
+            P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
+            P231[1,i] <- -0.5*mat_mult_t(L1[i,,drop=FALSE], temp,
                                               L1[i,,drop=FALSE])
             P232[1,i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
           }
