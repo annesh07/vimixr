@@ -9,7 +9,7 @@ using namespace Rcpp;
 //   http://adv-r.had.co.nz/Rcpp.html
 //   http://gallery.rcpp.org/
 //
-
+//' @export
 // [[Rcpp::export]]
 
 NumericVector cum_clustprop_var(const NumericMatrix P1) {
