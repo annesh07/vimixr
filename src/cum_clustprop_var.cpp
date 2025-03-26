@@ -1,14 +1,8 @@
 #include <Rcpp.h>
 using namespace Rcpp;
-
-// You can source this function into an R session using the Rcpp::sourceCpp
-// function (or via the Source button on the editor toolbar). Learn
-// more about Rcpp at:
-//
-//   http://www.rcpp.org/
-//   http://adv-r.had.co.nz/Rcpp.html
-//   http://gallery.rcpp.org/
-//
+//' cum_clustprop_var Calculate the columnwise sum of rowwise cummulative probability for variance
+//' @param P1 probability matrix
+//' @return rowwise cummulative probability for variance
 //' @export
 // [[Rcpp::export]]
 

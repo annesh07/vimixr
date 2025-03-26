@@ -4,7 +4,7 @@
 \alias{plot.CVIoutput}
 \title{S3 plotting function for \code{CVIoutput}objects'}
 \usage{
-\method{plot}{CVIoutput}(x, y = NULL, ...)
+\method{plot}{CVIoutput}(x, ...)
 }
 \arguments{
 \item{x}{a CVIoutput object}

@@ -6,6 +6,9 @@ cum_clustprop <- function(P1) {
     .Call(`_vimixr_cum_clustprop`, P1)
 }
 
+#' cum_clustprop_var Calculate the columnwise sum of rowwise cummulative probability for variance
+#' @param P1 probability matrix
+#' @return rowwise cummulative probability for variance
 #' @export
 cum_clustprop_var <- function(P1) {
     .Call(`_vimixr_cum_clustprop_var`, P1)
