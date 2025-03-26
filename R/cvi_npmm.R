@@ -535,7 +535,7 @@ cvi_npmm <- function(X, variational_params,
   clust <- table(clustering) #clusters with proportions
   clustnum <- length(unique(clustering)) #number of clusters
   #plots
-  pca <- prcomp(X1)
+  pca <- prcomp(X)
   pca_df <- data.frame(PC1 = pca$x[,1],
                        PC2 = pca$x[,2],
                        Cluster = as.factor(clustering))
