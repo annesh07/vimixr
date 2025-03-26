@@ -408,14 +408,13 @@ CVI_update_function <- function(fixed_variance = FALSE,
           #updating the latent probability values
           P230 <- matrix(0, nrow = N, ncol = T0)
           P233 <- matrix(0, nrow = N, ncol = T0)
-          for (i in 1:T0){
-            P233[,i] <- -0.5*quadratic_form_diag(X, inv_C0[,,i])
-            P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i], X)
-          }
           P231 <- matrix(0, nrow = 1, ncol = T0)
           for (i in 1:T0){
-            P231[1,i] <- -0.5*mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i],
-                                              L1[i,,drop=FALSE])
+            temp <- inv_C0[,,i]
+            P233[,i] <- -0.5*quadratic_form_diag(X, temp)
+            P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
+            P231[1,i] <- -0.5*mat_mult_t(L1[i,,drop=FALSE], temp,
+                                         L1[i,,drop=FALSE])
           }
           P232 <- 0.5*E_log_C0
           P_const <- -0.5*D*(log(2*pi) + 1/(1/k0 + RP))
@@ -515,22 +514,18 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           #expectation of inverse of data covariance matrix
           inv_C0 <- array(0, c(D, D, T0))
-          for (i in 1:T0){
-            inv_C0[,,i] <- Rfast::Diag.fill(C1[,,i], a1[1,i]/B1[i,])
-          }
 
           #updating the latent probability values
           P230 <- matrix(0, nrow = N, ncol = T0)
           P233 <- matrix(0, nrow = N, ncol = T0)
-          for (i in 1:T0){
-            P233[,i] <- -0.5*quadratic_form_diag(X, inv_C0[,,i])
-            P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i], X)
-          }
           P231 <- matrix(0, nrow = 1, ncol = T0)
           P232 <- P231
           for (i in 1:T0){
-            P231[1,i] <- -0.5*mat_mult_t(L1[i,,drop=FALSE], inv_C0[,,i],
-                                              L1[i,,drop=FALSE])
+            inv_C0[,,i] <- temp <- Rfast::Diag.fill(C1[,,i], a1[1,i]/B1[i,])
+            P233[,i] <- -0.5*quadratic_form_diag(X, temp)
+            P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
+            P231[1,i] <- -0.5*mat_mult_t(L1[i,,drop=FALSE], temp,
+                                         L1[i,,drop=FALSE])
             P232[1,i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
           }
           P_const <- -0.5*D*(log(2*pi) + 1/(1/k0 + RP))
