@@ -1,14 +1,13 @@
 #include <RcppEigen.h>
 using namespace Rcpp;
 
-// You can source this function into an R session using the Rcpp::sourceCpp
-// function (or via the Source button on the editor toolbar). Learn
-// more about Rcpp at:
-//
-//   http://www.rcpp.org/
-//   http://adv-r.had.co.nz/Rcpp.html
-//   http://gallery.rcpp.org/
-//
+//' t_mat_mult
+//'
+//' Calculate a combination of matrix multiplications
+//' @param A matrix
+//' @param B matrix
+//' @param C matrix
+//' @return t(A) %*% B %*% C
 //' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd t_mat_mult(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B, const Eigen::MatrixXd& C) {

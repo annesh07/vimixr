@@ -1,6 +1,7 @@
 #' S3 plotting function for `CVIoutput`objects'
 #'
 #' @param x a CVIoutput object
+#' @param ... additional arguments
 #'
 #' @export
 

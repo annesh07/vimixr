@@ -1,14 +1,12 @@
 #include <RcppEigen.h>
 using namespace Rcpp;
 
-// You can source this function into an R session using the Rcpp::sourceCpp
-// function (or via the Source button on the editor toolbar). Learn
-// more about Rcpp at:
-//
-//   http://www.rcpp.org/
-//   http://adv-r.had.co.nz/Rcpp.html
-//   http://gallery.rcpp.org/
-//
+//' quadratic_form_diag
+//'
+//' Calculate a combination of matrix multiplications
+//' @param A matrix
+//' @param B matrix
+//' @return diag(A %*% B %*% t(A))
 //' @export
 // [[Rcpp::export]]
 Eigen::VectorXd quadratic_form_diag(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B) {

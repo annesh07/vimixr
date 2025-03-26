@@ -8,6 +8,8 @@
 }
 \arguments{
 \item{x}{a CVIoutput object}
+
+\item{...}{additional arguments}
 }
 \description{
 S3 plotting function for \code{CVIoutput}objects'

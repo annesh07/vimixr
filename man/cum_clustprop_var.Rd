@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{cum_clustprop_var}
 \alias{cum_clustprop_var}
-\title{cum_clustprop_var Calculate the columnwise sum of rowwise cummulative probability for variance}
+\title{cum_clustprop_var}
 \usage{
 cum_clustprop_var(P1)
 }
@@ -13,5 +13,5 @@ cum_clustprop_var(P1)
 rowwise cummulative probability for variance
 }
 \description{
-cum_clustprop_var Calculate the columnwise sum of rowwise cummulative probability for variance
+Calculate the columnwise sum of rowwise cummulative probability for variance
 }

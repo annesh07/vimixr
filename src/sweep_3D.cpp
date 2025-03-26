@@ -6,6 +6,14 @@
 using namespace Eigen;
 using namespace Rcpp;
 
+//' sweep_3D
+//'
+//' A C++ alternative of sweep() function from base R
+//' @param A a 3D array
+//' @param R a vector
+//' @param dims dimensions in 3D
+//' @param n_threads number of threads
+//' @return sweep(A, 3, R, "*")
 //' @export
 // [[Rcpp::export]]
 NumericVector sweep_3D(NumericVector A, NumericVector R, IntegerVector dims, int n_threads = 4) {

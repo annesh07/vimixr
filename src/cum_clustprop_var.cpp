@@ -1,6 +1,8 @@
 #include <Rcpp.h>
 using namespace Rcpp;
-//' cum_clustprop_var Calculate the columnwise sum of rowwise cummulative probability for variance
+//' cum_clustprop_var
+//'
+//' Calculate the columnwise sum of rowwise cummulative probability for variance
 //' @param P1 probability matrix
 //' @return rowwise cummulative probability for variance
 //' @export

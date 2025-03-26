@@ -66,16 +66,6 @@ and Laplace distributed ('sparse') or element-wise Gamma and Normal
 distributed ('off-diagonal normal')}
 
 \item{...}{additional parameters, further details given below}
-
-\item{PC1}{The first PCA component}
-
-\item{PC2}{The second PCA component}
-
-\item{x}{x-axis variable for the PCA plot}
-
-\item{y}{y-axis variable for the PCA plot}
-
-\item{Cluster}{Clustering obtained from posterior latent allocation matrix}
 }
 \value{
 The following objects are returned by \code{vimixr} \describe{

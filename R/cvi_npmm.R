@@ -168,11 +168,6 @@
 #' and Laplace distributed ('sparse') or element-wise Gamma and Normal
 #' distributed ('off-diagonal normal')
 #' @param ... additional parameters, further details given below
-#' @param PC1 The first PCA component
-#' @param PC2 The second PCA component
-#' @param x x-axis variable for the PCA plot
-#' @param y y-axis variable for the PCA plot
-#' @param Cluster Clustering obtained from posterior latent allocation matrix
 #'
 #' @returns The following objects are returned by \code{vimixr} \describe{
 #'  \item{\code{alpha}: posterior DP concentration parameter}{}
