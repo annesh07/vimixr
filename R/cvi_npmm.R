@@ -55,31 +55,30 @@
 #'    }
 #'    \item \emph{Cholesky-decomposition} We need the following additional
 #'    arguments: \describe{
-#'      \item{\code{prior_shape_diag_decomp}: a non-negative scalar as the shape
+#'    \item{\code{prior_shape_diag_decomp}: a non-negative scalar as the shape
 #'            parameter of Gamma prior for diagonal elements of the
 #'            Cholesly-decomposed matrix}{}
-#'      \item{\code{prior_rate_diag_decomp}: a non-negative scalar as the rate
+#'    \item{\code{prior_rate_diag_decomp}: a non-negative scalar as the rate
 #'            parameter of Gamma prior for diagonal elements of the
 #'            Cholesly-decomposed matrix}{}
-#'      \item{\code{prior_mean_offdiag_decomp}: a scalar as the mean
+#'    \item{\code{prior_mean_offdiag_decomp}: a scalar as the mean
 #'            parameter of Normal prior for off-diagonal elements of the
 #'            Cholesly-decomposed matrix}{}
-#'      \item{\code{prior_var_offdiag_decomp}: a non-negative scalar as the variance
+#'    \item{\code{prior_var_offdiag_decomp}: a non-negative scalar as the variance
 #'            parameter of Normal prior for off-diagonal elements of the
 #'            Cholesly-decomposed matrix}{}
-#'      \item{\code{post_shape_diag_decomp}: initial value for posterior update
+#'    \item{\code{post_shape_diag_decomp}: initial value for posterior update
 #'            of the shape parameter for diagonal elements}{}
-#'      \item{\code{post_rate_diag_decomp}: initial value for posterior update
+#'    \item{\code{post_rate_diag_decomp}: initial value for posterior update
 #'            of the rate parameter for diagonal elements}{}
-#'      \item{\code{post_mean_offdiag_decomp}: initial value for posterior update
+#'    \item{\code{post_mean_offdiag_decomp}: initial value for posterior update
 #'            of the mean parameter for off-diagonal elements}{}
-#'      \item{\code{post_var_offdiag_decomp}: initial value for posterior update
+#'    \item{\code{post_var_offdiag_decomp}: initial value for posterior update
 #'            of the variance parameter for off-diagonal elements}{}
-#'      \item{\code{prior_cov_eta}: a positive definite matrix,
+#'    \item{\code{prior_cov_eta}: a positive definite matrix,
 #'            representing the covariance prior for the DP mean parameters}{}
-#'      \item{\code{post_cov_eta}: initial value for the
-#'            posterior update of covariance for the DP mean parameters}{}
-#'    }
+#'    \item{\code{post_cov_eta}: initial value for the
+#'            posterior update of covariance for the DP mean parameters}{}}
 #'  }
 #'  \item \strong{Unknown covariance (cluster-specific)} \itemize{
 #'    \item \emph{Inverse Wishart} We need the following additional
@@ -176,7 +175,7 @@
 #'  \item{\code{Cluster Proportion}: cluster proportions from
 #'        posterior probability allocation matrix}{}
 #'  \item{\code{log Probability matrix}: log of posterior probability allocation
-#'        matrix}
+#'        matrix}{}
 #'  \item{\code{ELBO}: Optimisation of the ELBO function}{}
 #'  \item{\code{Iterations}: Number of iterations required for convergence}{}
 #'  \item{\code{UMAP visualisation}: A UMAP plot to visualize the clustering

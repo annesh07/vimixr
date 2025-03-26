@@ -75,7 +75,7 @@ posterior probability allocation matrix}{}
 \item{\code{Cluster Proportion}: cluster proportions from
 posterior probability allocation matrix}{}
 \item{\code{log Probability matrix}: log of posterior probability allocation
-matrix}
+matrix}{}
 \item{\code{ELBO}: Optimisation of the ELBO function}{}
 \item{\code{Iterations}: Number of iterations required for convergence}{}
 \item{\code{UMAP visualisation}: A UMAP plot to visualize the clustering
@@ -166,8 +166,7 @@ of the variance parameter for off-diagonal elements}{}
 \item{\code{prior_cov_eta}: a positive definite matrix,
 representing the covariance prior for the DP mean parameters}{}
 \item{\code{post_cov_eta}: initial value for the
-posterior update of covariance for the DP mean parameters}{}
-}
+posterior update of covariance for the DP mean parameters}{}}
 }
 \item \strong{Unknown covariance (cluster-specific)} \itemize{
 \item \emph{Inverse Wishart} We need the following additional
