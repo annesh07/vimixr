@@ -9,7 +9,6 @@
 #'
 #' @export
 #'
-#' @examples
 elbo_fixed_diagonal <- function(X, inverts, params){
   N <- params$N
   D <- params$D
