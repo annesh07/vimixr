@@ -188,6 +188,8 @@
 #' Diag.matrix
 #' @importFrom ggplot2 ggplot aes geom_point geom_line labs
 #' theme_minimal
+#' @importFrom rlang .data
+#' @importFrom stats prcomp
 #'
 #' @export
 #'
@@ -530,19 +532,20 @@ cvi_npmm <- function(X, variational_params,
   clustnum <- length(unique(clustering)) #number of clusters
   #plots
   pca <- prcomp(X)
-  pca_df <- data.frame(PC1 = pca$x[,1],
-                       PC2 = pca$x[,2],
-                       Cluster = as.factor(clustering))
-  ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = PC1, y = PC2,
-                                                       color = Cluster)) +
+  pca_df <- data.frame("PC1" = pca$x[,1],
+                       "PC2" = pca$x[,2],
+                       "Cluster" = as.factor(clustering))
+  ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2,
+                                                       color = .data$Cluster)) +
     ggplot2::geom_point(size = 3, alpha = 0.8) +
-    ggplot2::labs(title = "PCA Plot", x = "PCA1", y = "PCA2") +
+    ggplot2::labs(title = "PCA Plot", x = "PC 1", y = "PC 2") +
     ggplot2::theme_minimal()
 
   Elbo <- unlist(lapply(elbo_values[-1], sum))
   Elbo_df <- data.frame(x = 1:length(Elbo),
                         y = Elbo)
-  ggplot_ELBO <- ggplot2::ggplot(Elbo_df, ggplot2::aes(x = x, y = y)) +
+  ggplot_ELBO <- ggplot2::ggplot(Elbo_df, ggplot2::aes(x = .data$x,
+                                                       y = .data$y)) +
     ggplot2::geom_line() +
     ggplot2::labs(title = "ELBO Optimisation", x = "Iterations", y = "ELBO") +
     ggplot2::theme_minimal()

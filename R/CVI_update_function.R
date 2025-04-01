@@ -22,7 +22,6 @@
 #'
 #' @export
 #'
-#' @examples
 CVI_update_function <- function(fixed_variance = FALSE,
                                 covariance_type = "diagonal",
                                 cluster_specific_covariance = TRUE,

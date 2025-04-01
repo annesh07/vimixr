@@ -12,7 +12,6 @@
 #' @return stops the code if the required list of arguments are not present
 #' @export
 #'
-#' @examples
 params_check <- function(params, fixed_variance=FALSE, covariance_type="diagonal",
                          cluster_specific_covariance=TRUE,
                          variance_prior_type=c("IW", "decomposed", "sparse",

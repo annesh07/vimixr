@@ -19,7 +19,6 @@
 #'
 #' @export
 #'
-#' @examples
 ELBO_function <- function(fixed_variance = FALSE, covariance_type = "diagonal",
                           cluster_specific_covariance = TRUE,
                           variance_prior_type = c("IW", "decomposed", "sparse",
