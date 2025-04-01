@@ -78,9 +78,9 @@ posterior probability allocation matrix}{}
 matrix}{}
 \item{\code{ELBO}: Optimisation of the ELBO function}{}
 \item{\code{Iterations}: Number of iterations required for convergence}{}
-\item{\code{UMAP visualisation}: A UMAP plot to visualize the clustering
+\item{\code{PCA_viz}: A PCA \code{\link{ggplot2}} plot to visualize the clustering
 of data based on cluster labels}{}
-\item{\code{ELBO optimisation}: A line plot to visualize the ELBO
+\item{\code{ELBO_viz}: A line \code{\link{ggplot2}} plot to visualize the ELBO
 optimisation}{}
 }
 }
@@ -232,7 +232,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
            matrix(rnorm(100, m=3, sd=0.5), ncol=2))
 
 #for fixed-diagonal
-cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
          post_mean_eta = matrix(0.001, 20, ncol(X)),
@@ -242,6 +242,8 @@ cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
          prior_precision_scalar_eta = 0.001,
          post_precision_scalar_eta = matrix(0.001, 20, 1),
          cov_data = diag(ncol(X)))
+ summary(res)
+ plot(res)
 
 #for varied-diagonal
 cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,

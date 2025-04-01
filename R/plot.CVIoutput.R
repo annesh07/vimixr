@@ -3,11 +3,12 @@
 #' @param x a CVIoutput object
 #' @param ... additional arguments
 #'
+#' @import patchwork
+#'
 #' @export
 
 plot.CVIoutput <- function(x, ...){
 
-  plot(sapply(x$optimisation$ELBO, sum)[-1], type="l",
-       xlab="Iterations", ylab="ELBO (log)")
+  x$ELBO_viz + x$PCA_viz
 
 }

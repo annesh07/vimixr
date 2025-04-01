@@ -14,11 +14,14 @@ RoxygenNote: 7.3.2
 License: MIT + file LICENSE
 Imports: 
     ggplot2,
+    patchwork,
     Rcpp,
     RcppEigen,
     Rfast,
     rlang
 Suggests: 
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 URL: https://github.com/annesh07/vimixr
@@ -26,3 +29,4 @@ BugReports: https://github.com/annesh07/vimixr/issues
 LinkingTo: 
     Rcpp,
     RcppEigen
+VignetteBuilder: knitr
