@@ -188,6 +188,7 @@
 #' Diag.matrix
 #' @importFrom ggplot2 ggplot aes geom_point geom_line labs
 #' theme_minimal
+#' @importFrom rlang .data
 #' @importFrom stats prcomp
 #'
 #' @export
