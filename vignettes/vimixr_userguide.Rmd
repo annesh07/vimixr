@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 library(vimixr)
 ```
 
-Let's generate some toy data
+Let's generate some toy data. Here the data contains N = 100 samples, D = 2 dimensions and K = 2 clusters.
 ```{r data}
 X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
             matrix(rnorm(100, m=3, sd=0.5), ncol=2))
@@ -26,8 +26,9 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 
 
 # Fixed-diagonal variance
+
 ```{r fixeddiag, message=FALSE, fig.height=4, fig.width=7}
-res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
           post_mean_eta = matrix(0.001, 20, ncol(X)),
@@ -42,7 +43,7 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
 ```
 
 # Varied diagonal variance
-```{r varieddiag, message=FALSE, fig.height=4, fig.width=7, eval=FALSE}
+```{r varieddiag, message=FALSE, fig.height=4, fig.width=7}
  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
             prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
             post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
@@ -60,8 +61,11 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
             post_precision_scalar_eta = matrix(0.001, 20, 1))
   summary(res)
   plot(res)
- #for fixed-full
- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+```
+
+# Fixed-full Variance
+```{r fixedfull, message=FALSE, fig.height=4, fig.width=7}
+  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
           post_mean_eta = matrix(0.001, 20, ncol(X)),
@@ -73,9 +77,13 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           post_cov_eta = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
           prior_cov_eta = 1000*diag(ncol(X)),
           cov_data = diag(ncol(X)))
+  summary(res)
+  plot(res)
+```
 
- #for varied-full-IW
- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+#Full Variance IW distribution
+```{r fulliw, message=FALSE, fig.height=4, fig.width=7}
+ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
           post_mean_eta = matrix(0.001, 20, ncol(X)),
@@ -90,9 +98,14 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           post_scale_cov = diag(ncol(X)),
           post_cov_eta = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
           prior_cov_eta = 1000*diag(ncol(X)))
+  summary(res)
+  plot(res)
+```
 
- #for varied-full-decomposed
-  cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+# Full Variance with Cholesky decomposition
+ 
+```{r fulldecomposed, message=FALSE, fig.height=4, fig.width=7}
+  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
            post_mean_eta = matrix(0.001, 20, ncol(X)),
@@ -111,9 +124,13 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            post_var_offdiag_decomp = matrix(0.001, 1, 0.5*ncol(X)*(ncol(X)-1)),
            post_cov_eta = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
            prior_cov_eta = 1000*diag(ncol(X)))
+  summary(res)
+  plot(res)
+```
 
- #for varied-cs-IW
- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+# Cluster-specific diagonal with IW distribution
+```{r csiw, message=FALSE, fig.height=4, fig.width=7}
+ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
            post_mean_eta = matrix(0.001, 20, ncol(X)),
@@ -127,9 +144,13 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            post_df_cs_cov = matrix(rep(ncol(X) + 2, 20), nrow = 1),
            post_scale_cs_cov = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
            scaling_cov_eta = 1)
+  summary(res)
+  plot(res)
+```
 
- #for varied-cs-sparse
- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+# Cluster-specific sparse Variance
+```{r cssparse, message=FALSE, fig.height=4, fig.width=7}
+ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
            post_mean_eta = matrix(0.001, 20, ncol(X)),
@@ -145,9 +166,13 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
            post_var_offd_cs_cov = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
            scaling_cov_eta = 1)
+  summary(res)
+  plot(res)
+```
 
- #for varied-cs-offd-normal
- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+# Cluster-specific variance with off-diagonal normal priors
+```{r csoffd, message=FALSE, fig.height=4, fig.width=7}
+ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
            post_mean_eta = matrix(0.001, 20, ncol(X)),
@@ -163,6 +188,8 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
            post_mean_offd_cs_cov = array(rep(diag(ncol(X)), 20), c(ncol(X), ncol(X), 20)),
            scaling_cov_eta = 1)
+  summary(res)
+  plot(res)
 
 ```
 
