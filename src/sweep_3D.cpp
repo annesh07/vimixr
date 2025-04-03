@@ -29,7 +29,9 @@ NumericVector sweep_3D(NumericVector A, NumericVector R, IntegerVector dims, int
   Map<VectorXd> vec_result(Rcpp::as<Map<VectorXd>>(result));
 
   // Parallelize over T0 slices
-#pragma omp parallel for num_threads(n_threads)
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(n_threads)
+  #endif
   for (int t = 0; t < T0; t++) {
     int offset = t * D2;  // Start of slice t in flat memory
     vec_result.segment(offset, D2) *= vec_R[t];  // Scale the slice
