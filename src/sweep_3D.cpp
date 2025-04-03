@@ -21,8 +21,7 @@ NumericVector sweep_3D(NumericVector A, NumericVector R, IntegerVector dims, int
   int T0 = dims[2];   // Third dimension (number of slices)
   int D2 = D * D;     // Size of each slice
 
-  // Map A and R to Eigen vectors
-  Map<VectorXd> vec_A(Rcpp::as<Map<VectorXd>>(A));
+  // Map R to Eigen vector
   Map<VectorXd> vec_R(Rcpp::as<Map<VectorXd>>(R));
 
   // Clone A to avoid modifying input
