@@ -418,7 +418,8 @@ cvi_npmm <- function(X, variational_params,
                        "PC2" = pca$x[,2],
                        "Cluster" = as.factor(clustering))
   ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2,
-                                                       color = .data$Cluster)) +
+                                                       color = .data$Cluster, 
+                                                     shape = .data$Cluster)) +
     ggplot2::geom_point(size = 3, alpha = 0.8) +
     ggplot2::labs(title = "PCA 1st factorial plan", x = "PC 1", y = "PC 2") +
     ggplot2::theme_minimal()

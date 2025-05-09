@@ -93,6 +93,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
       }))
       P <- exp(Plog)
       RP <- Rfast::colsums(P)
+      ord <- order(RP, decreasing = TRUE)
+      Plog <- Plog[,ord]
+      P <- P[,ord]
+      RP <- Rfast::colsums(P)
 
       #updated parameters of eta's
       for (i in 1:T0){
@@ -133,6 +137,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
         x - mx - log(sum(exp(x - mx)))
       }))
       P <- exp(Plog)
+      RP <- Rfast::colsums(P)
+      ord <- order(RP, decreasing = TRUE)
+      Plog <- Plog[,ord]
+      P <- P[,ord]
       RP <- Rfast::colsums(P)
 
       #update of parameters of eta's
@@ -189,6 +197,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
       }))
       P <- exp(Plog)
       RP <- Rfast::colsums(P)
+      ord <- order(RP, decreasing = TRUE)
+      Plog <- Plog[,ord]
+      P <- P[,ord]
+      RP <- Rfast::colsums(P)
 
       #updated parameters of eta's
       for (i in 1:T0){
@@ -237,6 +249,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
             x - mx - log(sum(exp(x - mx)))
           }))
           P <- exp(Plog)
+          RP <- Rfast::colsums(P)
+          ord <- order(RP, decreasing = TRUE)
+          Plog <- Plog[,ord]
+          P <- P[,ord]
           RP <- Rfast::colsums(P)
           CP <- Rfast::rowsums(P)
 
@@ -310,6 +326,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
             x - mx - log(sum(exp(x - mx)))
           }))
           P <- exp(Plog)
+          RP <- Rfast::colsums(P)
+          ord <- order(RP, decreasing = TRUE)
+          Plog <- Plog[,ord]
+          P <- P[,ord]
           RP <- Rfast::colsums(P)
 
           #update for eta_i's
@@ -427,6 +447,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           }))
           P <- exp(Plog)
           RP <- Rfast::colsums(P)
+          ord <- order(RP, decreasing = TRUE)
+          Plog <- Plog[,ord]
+          P <- P[,ord]
+          RP <- Rfast::colsums(P)
 
           nu1 <- nu0 + matrix(RP, nrow=1)
           for (i in 1:T0){
@@ -481,6 +505,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
             x - mx - log(sum(exp(x - mx)))
           }))
           P <- exp(Plog)
+          RP <- Rfast::colsums(P)
+          ord <- order(RP, decreasing = TRUE)
+          Plog <- Plog[,ord]
+          P <- P[,ord]
           RP <- Rfast::colsums(P)
 
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
@@ -538,11 +566,15 @@ CVI_update_function <- function(fixed_variance = FALSE,
           }))
           P <- exp(Plog)
           RP <- Rfast::colsums(P)
+          ord <- order(RP, decreasing = TRUE)
+          Plog <- Plog[,ord]
+          P <- P[,ord]
+          RP <- Rfast::colsums(P)
 
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
           for (i in 1:T0){
             B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
-            C01 <- 0.5*t_mat_mult(X, diag(P[,i]), X)
+            C01 <- -0.5*c0*t_mat_mult(X, diag(P[,i]), X)
             C1[,,i] <- Rfast::Diag.fill(C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
                          Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
@@ -569,13 +601,9 @@ CVI_update_function <- function(fixed_variance = FALSE,
   params <- out
   Plog <- params$log_prob_matrix
   P <- params$P
-  RP <- Rfast::colsums(P)
 
   #update for concentration parameter alpha
-  ord <- order(RP, decreasing = TRUE)
-  Plog0 <- Plog[,ord]
-  Pf0 <- exp(Plog0)
-  C0sum <- Rfast::colsums(Pf0)
+  C0sum <- Rfast::colsums(P)
   index <- which((C0sum) >= 1)
   l0 <- max(index)
   #update of the shape parameter of alpha
@@ -583,10 +611,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
   #update of the rate parameter of alpha
   alpha0 <- l0/log(N)
   if (l0 > 1){
-    a_eni <- Rfast::colsums(Pf0[,1:l0])
-    a_vni <- Rfast::colsums(Pf0[,1:l0]*(1-Pf0[,1:l0]))
-    a_enj <- cum_clustprop(Pf0[,1:l0])
-    a_vnj <- cum_clustprop_var(Pf0[,1:l0])
+    a_eni <- Rfast::colsums(P[,1:l0])
+    a_vni <- Rfast::colsums(P[,1:l0]*(1-P[,1:l0]))
+    a_enj <- cum_clustprop(P[,1:l0])
+    a_vnj <- cum_clustprop_var(P[,1:l0])
     W20 <- log(alpha0 + a_eni[1:(l0 - 1)] + a_enj[1:(l0 - 1)]) -
       0.5*(a_vni[1:(l0 - 1)] +
              a_vnj[1:(l0 - 1)])/((alpha0 + a_eni[1:(l0 - 1)] +
@@ -597,8 +625,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
       log(alpha0)
     W2f <- sum(W20) + W21
   } else {
-    W2f <- log(alpha0 + sum(Pf0[,l0])) -
-      0.5*sum(Pf0[,l0]*(1-Pf0[,l0]))/((alpha0 + sum(Pf0[,l0]))^2) - log(alpha0)
+    W2f <- log(alpha0 + sum(P[,l0])) -
+      0.5*sum(P[,l0]*(1-P[,l0]))/((alpha0 + sum(P[,l0]))^2) - log(alpha0)
   }
   W2 <- s2  + W2f
 
