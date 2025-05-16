@@ -39,8 +39,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
   Mu0 <- params$prior_mean_eta   #prior mean for DP mean parameters; vector
   L1 <- params$post_mean_eta     #posterior mean for DP mean parameters; matrix
   P <- params$P                  #allocation probability matrix
-
+  
   RP <- Rfast::colsums(P)
+  
+  
   #probability matrix update based on latent allocations
   P2 <- matrix(0, N, T0)
   for (n in 1:N){
@@ -414,7 +416,18 @@ CVI_update_function <- function(fixed_variance = FALSE,
           nu1 <- params$post_df_cs_cov
           V1 <- params$post_scale_cs_cov
           k0 <- params$scaling_cov_eta
-
+          
+          RP <- Rfast::colsums(P)
+          
+          nu1 <- nu0 + matrix(RP, nrow=1)
+          for (i in 1:T0){
+            V10 <- t_mat_mult(X, diag(P[,i]), X)
+            V1[,,i] <- V0 + (1/k0)*matrix(Mu0, nrow = D, ncol = D,
+                                          byrow = TRUE)*c(Mu0) +
+              V10 + diag(1e-6, D)
+            L1[i,] <- (Mu0/k0 + Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
+          }
+          
           V1_inv <- array(apply(V1, 3, function(x){spdinv(x)}), dim = dim(V1))
           #expectation of inverse of data covariance matrix
           inv_C0 <- sweep_3D(V1_inv, nu1, c(D, D, T0))
@@ -450,16 +463,6 @@ CVI_update_function <- function(fixed_variance = FALSE,
           ord <- order(RP, decreasing = TRUE)
           Plog <- Plog[,ord]
           P <- P[,ord]
-          RP <- Rfast::colsums(P)
-
-          nu1 <- nu0 + matrix(RP, nrow=1)
-          for (i in 1:T0){
-            V10 <- t_mat_mult(X, diag(P[,i]), X)
-            V1[,,i] <- V0 + (1/k0)*matrix(Mu0, nrow = D, ncol = D,
-                                          byrow = TRUE)*c(Mu0) +
-              V10 + diag(1e-6, D)
-            L1[i,] <- (Mu0/k0 + Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
-          }
 
           params$post_df_cs_cov <- nu1
           params$post_scale_cs_cov <- V1
@@ -477,10 +480,20 @@ CVI_update_function <- function(fixed_variance = FALSE,
           B1 <- params$post_rate_d_cs_cov
           C1 <- params$post_var_offd_cs_cov
           k0 <- params$scaling_cov_eta
-
+          
+          RP <- Rfast::colsums(P)
+          a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
+          for (i in 1:T0){
+            B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
+            C01 <- 1/c0 + 0.5*abs(t_mat_mult(X, diag(P[,i]), X))
+            C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
+            L1[i,] <- (Mu0/k0 +
+                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
+          }
+          
+          
           #expectation of inverse of C0, data covariance matrix
           inv_C0 <- array(0, c(D, D, T0))
-
 
           #updating the latent probability values
           P230 <- matrix(0, nrow = N, ncol = T0)
@@ -509,18 +522,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           ord <- order(RP, decreasing = TRUE)
           Plog <- Plog[,ord]
           P <- P[,ord]
-          RP <- Rfast::colsums(P)
-
-          a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
-          for (i in 1:T0){
-            B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
-            #alt for Rfast::Crossprod(sweep(X, 1, P[,i], "*"), X)
-            C01 <- 1/c0 + 0.5*abs(t_mat_mult(X, diag(P[,i]), X))
-            C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
-            L1[i,] <- (Mu0/k0 +
-                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
-          }
-
+          
           params$post_shape_d_cs_cov <- a1
           params$post_rate_d_cs_cov <- B1
           params$post_var_offd_cs_cov <- C1
@@ -538,7 +540,18 @@ CVI_update_function <- function(fixed_variance = FALSE,
           B1 <- params$post_rate_d_cs_cov
           C1 <- params$post_mean_offd_cs_cov
           k0 <- params$scaling_cov_eta
-
+          
+          RP <- Rfast::colsums(P)
+          
+          a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
+          for (i in 1:T0){
+            B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
+            C01 <- -0.5*c0*t_mat_mult(X, diag(P[,i]), X)
+            C1[,,i] <- Rfast::Diag.fill(C01, rep(0, D))
+            L1[i,] <- (Mu0/k0 +
+                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
+          }
+          
           #expectation of inverse of data covariance matrix
           inv_C0 <- array(0, c(D, D, T0))
 
@@ -569,17 +582,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           ord <- order(RP, decreasing = TRUE)
           Plog <- Plog[,ord]
           P <- P[,ord]
-          RP <- Rfast::colsums(P)
-
-          a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
-          for (i in 1:T0){
-            B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
-            C01 <- -0.5*c0*t_mat_mult(X, diag(P[,i]), X)
-            C1[,,i] <- Rfast::Diag.fill(C01, rep(0, D))
-            L1[i,] <- (Mu0/k0 +
-                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
-          }
-
+          
           params$post_shape_d_cs_cov <- a1
           params$post_rate_d_cs_cov <- B1
           params$post_mean_offd_cs_cov <- c0*C1
@@ -597,14 +600,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
   } else {
     stop("covariance_type can only be either 'diagonal' or 'full'.")
   }
-
-  params <- out
-  Plog <- params$log_prob_matrix
-  P <- params$P
-
+  params$P <- P
   #update for concentration parameter alpha
   C0sum <- Rfast::colsums(P)
-  index <- which((C0sum) >= 1)
+  index <- which(C0sum >= 1)
   l0 <- max(index)
   #update of the shape parameter of alpha
   W1 <- s1 + l0 - 1
@@ -629,7 +628,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
       0.5*sum(P[,l0]*(1-P[,l0]))/((alpha0 + sum(P[,l0]))^2) - log(alpha0)
   }
   W2 <- s2  + W2f
-
+  
   params$post_shape_alpha <- W1
   params$post_rate_alpha <- W2
 

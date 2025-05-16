@@ -382,8 +382,8 @@ elbo_cs_sparse <- function(X, inverts, params){
 
   e210 <- rep(0, T0)
   for (i in 1:T0){
-    e210[i] <- sum(a0*log(b0) - lgamma(a0) +
-                     (a0 - 1)*(digamma(a1[1,i]) - log(B1[i,])) - b0*a1[1,i]/B1[i,])
+    e210[i] <- sum(a0[1,i]*log(b0) - lgamma(a0[1,i]) +
+                     (a0[1,i] - 1)*(digamma(a1[1,i]) - log(B1[i,])) - b0*a1[1,i]/B1[i,])
   }
   e21 <- sum(e210) + sum(-log(2*c0) - C1[!diag(D)]/c0)
   e2 <- e20 + e21
@@ -452,8 +452,8 @@ elbo_cs_offd_normal <- function(X, inverts, params){
 
   e210 <- rep(0, T0)
   for (i in 1:T0){
-    e210[i] <- sum(a0*log(b0) - lgamma(a0) +
-                     (a0 - 1)*(digamma(a1[1,i]) - log(B1[i,])) - b0*a1[1,i]/B1[i,])
+    e210[i] <- sum(a0[1,i]*log(b0) - lgamma(a0[1,i]) +
+                     (a0[1,i] - 1)*(digamma(a1[1,i]) - log(B1[i,])) - b0*a1[1,i]/B1[i,])
   }
   e21 <- sum(e210) + sum(-0.5*log(2*pi*c0) - 0.5*(1 + C1[!diag(D)]^2)/c0)
   e2 <- e20 + e21

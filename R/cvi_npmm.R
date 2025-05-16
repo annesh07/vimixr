@@ -203,7 +203,7 @@
 #'          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
 #'          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
 #'          post_mean_eta = matrix(0.001, 20, ncol(X)),
-#'          log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+#'          log_prob_matrix = t(apply(matrix(-3, nrow(X), 20), 1,
 #'                              function(x){x/sum(x)})), maxit = 1000,
 #'          fixed_variance = TRUE, covariance_type = "diagonal",
 #'          prior_precision_scalar_eta = 0.001,
@@ -228,6 +228,8 @@ cvi_npmm <- function(X, variational_params,
   N <- nrow(X)
   D <- ncol(X)
   T0 <- variational_params
+  log_prob_matrix <- log_prob_matrix[, order(Rfast::colsums(exp(log_prob_matrix)), 
+                                           decreasing = TRUE)]
   varargs <- list(...)
   params <- list()
   inverts <- list()
@@ -244,8 +246,9 @@ cvi_npmm <- function(X, variational_params,
   params$post_mean_eta <- post_mean_eta
 
   params$log_prob_matrix <- log_prob_matrix
-  params$P <- exp(log_prob_matrix)
+  params$P <- t(apply(exp(log_prob_matrix), 1, function(x){x/sum(x)}))
   RP <- Rfast::colsums(params$P)
+  
 
   #updating the parameter list based on the conditions
   if(covariance_type == "diagonal") {
@@ -421,7 +424,7 @@ cvi_npmm <- function(X, variational_params,
                                                        color = .data$Cluster, 
                                                      shape = .data$Cluster)) +
     ggplot2::geom_point(size = 3, alpha = 0.8) +
-    ggplot2::labs(title = "PCA 1st factorial plan", x = "PC 1", y = "PC 2") +
+    ggplot2::labs(title = "PCA projection of clustered data", x = "PC 1", y = "PC 2") +
     ggplot2::theme_minimal()
 
   Elbo <- unlist(lapply(elbo_values[-1], sum))
