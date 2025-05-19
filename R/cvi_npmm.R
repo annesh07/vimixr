@@ -435,10 +435,136 @@ cvi_npmm <- function(X, variational_params,
     ggplot2::geom_line() +
     ggplot2::labs(title = "ELBO Optimisation", x = "Iterations", y = "ELBO") +
     ggplot2::theme_minimal()
+  
+  post_distribution = list()
+  L1 <- params$post_mean_eta 
+  
+  if(covariance_type == "diagonal") {
+    
+    if(fixed_variance) {
+      L2 <- params$post_precision_scalar_eta 
 
-  posterior <- list("alpha" = alpha0, "Cluster number" = clustnum,
+      post_distribution[["Mean"]] = L1/c(L2)
+      
+    } else {
+      G1 <- params$post_shape_scalar_cov 
+      G2 <- params$post_rate_scalar_cov 
+      L2 <- params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
+      
+      post_distribution[["Mean"]] = L1/c(L2)
+      post_distribution[["Precision"]] = (G1/G2)*diag(D)
+      #G2/G1 instead of G1/G2 because prior on the precision diagonal scalar
+    }
+    
+  } else if(covariance_type == "full") {
+    
+    if(fixed_variance) {
+      L2 <- params$post_cov_eta
+      L21 <- matrix(0, nrow = T0, ncol = D)
+      for (i in 1:T0){
+        L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
+      }
+      
+      post_distribution[["Mean"]] = L21  
+      
+    } else {
+      if(!cluster_specific_covariance) {
+        if(variance_prior_type == "IW"){
+          nu <- params$post_df_cov
+          V <- params$post_scale_cov
+          L2 <- params$post_cov_eta
+
+          L21 <- matrix(0, nrow = T0, ncol = D)
+          for (i in 1:T0){
+            L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
+          }
+          
+          post_distribution[["Mean"]] = L21
+          post_distribution[["Precision"]] = nu*V
+          
+        } else if (variance_prior_type == "decomposed"){
+          a1 <- params$post_shape_diag_decomp
+          b1 <- params$post_rate_diag_decomp
+          mu1 <- params$post_mean_offdiag_decomp
+          c1 <- params$post_var_offdiag_decomp
+          L2 <- params$post_cov_eta
+          
+          mean_lower <- matrix(0, nrow = D, ncol = D) #mean matrix of the decomposed
+          mean_lower[lower.tri(mean_lower, diag = FALSE)] <- mu1
+          sigma_lower <- matrix(0, nrow = D, ncol = D) #var matrix of the decomposed
+          sigma_lower[lower.tri(sigma_lower, diag = FALSE)] <- c1
+          mean_L <- mean_lower + diag(sqrt(1/b1)*sqrt(pi)/beta(a1,0.5))
+          diag(sigma_lower) <- (1/b1)*(a1 - (sqrt(pi)/beta(a1,0.5))^2)
+          #expected inverse of C0; covariance matrix of data
+          inv_C0 <- mat_mult(mean_L, t(mean_L)) +
+            diag(Rfast::rowsums(sigma_lower))
+          
+          L21 <- matrix(0, nrow = T0, ncol = D)
+          for (i in 1:T0){
+            L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
+          }
+          
+          post_distribution[["Mean"]] = L21
+          post_distribution[["Precision"]] = inv_C0
+          
+        } else {
+          stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
+               when 'cluster_specific_covariance' is FALSE")
+        }
+        
+      }else{
+        if(variance_prior_type == "IW"){
+          nu1 <- params$post_df_cs_cov
+          V1 <- params$post_scale_cs_cov
+
+          V1_inv <- array(apply(V1, 3, function(x){spdinv(x)}), dim = dim(V1))
+          #expectation of inverse of data covariance matrix
+          inv_C0 <- sweep_3D(V1_inv, nu1, c(D, D, T0))
+          
+          post_distribution[["Mean"]] = L1
+          post_distribution[["Precision_cs"]] = inv_C0
+          
+        } else if (variance_prior_type == "sparse"){
+          a1 <- params$post_shape_d_cs_cov
+          B1 <- params$post_rate_d_cs_cov
+
+          #expectation of inverse of C0, data covariance matrix
+          inv_C0 <- array(0, c(D, D, T0))
+          for (i in 1:T0){
+            inv_C0[,,i] <- temp <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
+          }
+          
+          post_distribution[["Mean"]] = L1
+          post_distribution[["Precision_cs"]] = inv_C0
+          
+        } else if (variance_prior_type == "off-diagonal normal"){
+          a1 <- params$post_shape_d_cs_cov
+          B1 <- params$post_rate_d_cs_cov
+          C1 <- params$post_mean_offd_cs_cov
+          
+          #expectation of inverse of data covariance matrix
+          inv_C0 <- array(0, c(D, D, T0))
+          for (i in 1:T0){
+            inv_C0[,,i] <- temp <- Rfast::Diag.fill(C1[,,i], a1[1,i]/B1[i,])}
+          
+          post_distribution[["Mean"]] = L1
+          post_distribution[["Precision_cs"]] = inv_C0
+          
+        } else {
+          stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
+               when 'cluster_specific_covariance' is TRUE")
+        }
+      }
+      
+    }
+  } else {
+    stop("covariance_type can only be either 'diagonal' or 'full'.")
+  }
+  
+  
+  posterior <- c(list("alpha" = alpha0, "Cluster number" = clustnum,
                     "Cluster Proportion" = clust,
-                    "log Probability matrix" = Plog)
+                    "log Probability matrix" = Plog), post_distribution)
   optimisation <- list("ELBO" = elbo_values,
                        "Iterations" = (length(elbo_values)-1))
 
