@@ -68,20 +68,16 @@ distributed ('off-diagonal normal')}
 \item{...}{additional parameters, further details given below}
 }
 \value{
-The following objects are returned by \code{vimixr} \describe{
-\item{\code{alpha}: posterior DP concentration parameter}{}
-\item{\code{Cluster number}: number of clusters from
-posterior probability allocation matrix}{}
-\item{\code{Cluster Proportion}: cluster proportions from
-posterior probability allocation matrix}{}
-\item{\code{log Probability matrix}: log of posterior probability allocation
-matrix}{}
-\item{\code{ELBO}: Optimisation of the ELBO function}{}
-\item{\code{Iterations}: Number of iterations required for convergence}{}
-\item{\code{PCA_viz}: A PCA \code{\link{ggplot2}} plot to visualize the clustering
-of data based on cluster labels}{}
-\item{\code{ELBO_viz}: A line \code{\link{ggplot2}} plot to visualize the ELBO
-optimisation}{}
+\verb{[vimixr()]} returns a \code{list} with the following elements:
+\itemize{
+\item \code{alpha}: posterior DP concentration parameter
+\item \verb{Cluster number}: number of clusters from posterior probability allocation matrix
+\item \verb{Cluster Proportion}: cluster proportions from posterior probability allocation matrix
+\item \verb{log Probability matrix}: log of posterior probability allocation matrix
+\item \code{ELBO}: Optimisation of the ELBO function
+\item \code{Iterations}: Number of iterations required for convergence
+\item \code{PCA_viz}: A PCA \verb{[ggplot2]} plot to visualize the clustering of data based on cluster labels
+\item \code{ELBO_viz}: A line \verb{[ggplot2]} plot to visualize the ELBO optimisation
 }
 }
 \description{
