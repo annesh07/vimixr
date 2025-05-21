@@ -1,18 +1,20 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# CVI
+# vimixr
 
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/annesh07/CVI/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/annesh07/CVI/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-The goal of CVI is to perform collapsed Variational Inference for DPMM
+The goal of **vimixr** is to perform collapsed Variational Inference for
+DPMM using adaptive inference on the DP concentration parameter as well
+as covariance hyper-parameter of DP base distribution.
 
 ## Installation
 
-You can install the development version of CVI from
+You can install the development version of **vimixr** from
 [GitHub](https://github.com/) with:
 
 ``` r
@@ -22,33 +24,41 @@ devtools::install_github("annesh07/CVI")
 
 ## Example
 
-This is a basic example which shows you how to solve a common problem:
-
 ``` r
-library(CVI)
-## basic example code
+library(vimixr)
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
+Let’s generate some toy data. Here the data contains N = 100 samples, D
+= 2 dimensions and K = 2 clusters.
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
+            matrix(rnorm(100, m=3, sd=0.5), ncol=2))
 ```
 
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this.
+In order to obtain the clusters present in **X**, we apply function from
+**vimixr** package that corresponds to a simple case with
+cluster-inspecific fixed diagonal covariance for the data.
 
-You can also embed plots, for example:
+``` r
+  # Fixed-diagonal variance
+  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
+          prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
+          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
+          post_mean_eta = matrix(0.001, 20, ncol(X)),
+          log_prob_matrix = t(apply(matrix(0.001, nrow(X), 20), 1,
+                              function(x){x/sum(x)})), maxit = 1000,
+          fixed_variance = TRUE, covariance_type = "diagonal",
+          prior_precision_scalar_eta = 0.001,
+          post_precision_scalar_eta = matrix(0.001, 20, 1),
+          cov_data = diag(ncol(X)))
+  summary(res)
+#>              Length Class  Mode
+#> posterior     5     -none- list
+#> optimisation  2     -none- list
+#> PCA_viz      11     gg     list
+#> ELBO_viz     11     gg     list
+  plot(res)
+```
 
-<img src="man/figures/README-pressure-1.png" width="100%" />
-
-In that case, don’t forget to commit and push the resulting figure
-files, so they display on GitHub and CRAN.
+<img src="man/figures/README-fixeddiag-1.png" width="100%" />
