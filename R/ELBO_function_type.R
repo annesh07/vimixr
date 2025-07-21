@@ -377,28 +377,32 @@ elbo_cs_sparse <- function(X, inverts, params){
     e31[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
   }
   e203 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*mat_mult_t(Mu0, x, Mu0)})
-  e20 <- -0.5*T0*log(2*pi) - 0.5*log(k0) + sum(e200) + sum(e201) -
+  e20 <- -0.5*D*T0*log(2*pi) + 0.5*D*T0*log(k0) + sum(e200) + sum(e201) -
     (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + sum(e203)
 
   e210 <- rep(0, T0)
   for (i in 1:T0){
-    e210[i] <- sum(a0[1,i]*log(b0) - lgamma(a0[1,i]) +
-                     (a0[1,i] - 1)*(digamma(a1[1,i]) - log(B1[i,])) - b0*a1[1,i]/B1[i,])
+    e210[i] <- sum(a0[1,i]*log(b0[i,]) - lgamma(a0[1,i]) +
+                     (a0[1,i] - 1)*(digamma(a1[1,i]) - log(B1[i,])) - 
+                     b0[i,]*a1[1,i]/B1[i,])
   }
   e21 <- sum(e210) + sum(-log(2*c0) - C1[!diag(D)]/c0)
   e2 <- e20 + e21
 
   #the data X
   e3 <- -N*0.5*D*log(2*pi) + sum(RP*e200) + sum(P*e30) + sum(P*e31) +
-    sum(RP*k0*e201) - 0.5*D*sum(RP/(1/k0 + RP))
+    sum(RP*e201) - 0.5*D*sum(RP/(1/k0 + RP))
 
-  #the variationa distributions
+  #the variational distributions
   e420 <- rep(0, T0)
+  e410 <- rep(0,T0)
   for (i in 1:T0){
+    e410[i] <- 0.5*sum(log(B1[i,]/a1[1,i]))
     e420[i] <- sum(a1[1,i]*log(B1[i,]) - lgamma(a1[1,i]) +
                      (a1[1,i] -1)*(digamma(a1[1,i]) - log(B1[i,])) - a1[1,i])
   }
-  e4 <- sum(e420) + sum(-log(2*C1[!diag(D)]) - 1)
+  e4 <- -0.5*D*T0*log(2*pi + 1) + sum(e410/(1/k0 + RP)) +
+    sum(e420) + sum(-log(2*C1[!diag(D)]) - 1)
 
   return(c("e_mean_cov"=e2, "e_data"=e3, "me_var"=-e4))
 }

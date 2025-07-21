@@ -531,6 +531,8 @@ cvi_npmm <- function(X, variational_params,
 
           post_distribution[["Mean"]] = L1
           post_distribution[["Precision_cs"]] = inv_C0
+          post_distribution[["Precision_cs_a1"]] = a1
+          post_distribution[["Precision_cs_B1"]] = B1
 
         } else if (variance_prior_type == "off-diagonal normal"){
           a1 <- params$post_shape_d_cs_cov
@@ -560,8 +562,11 @@ cvi_npmm <- function(X, variational_params,
   posterior <- c(list("alpha" = alpha0, "Cluster number" = clustnum,
                     "Cluster Proportion" = clust,
                     "log Probability matrix" = Plog), post_distribution)
+  logBayes <- as.list(elbo_values[length(elbo_values)])$e_data - 
+    as.list(elbo_values[1])$e_data
   optimisation <- list("ELBO" = elbo_values,
-                       "Iterations" = (length(elbo_values)-1))
+                       "Iterations" = (length(elbo_values)-1),
+                       "logBF" = logBayes)
 
   output <-  list("posterior" = posterior, "optimisation" = optimisation,
                   "PCA_viz" = ggplot_pca,
