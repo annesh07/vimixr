@@ -350,6 +350,7 @@ cvi_npmm <- function(X, variational_params,
           params$post_rate_d_cs_cov <- varargs$post_rate_d_cs_cov
           params$post_var_offd_cs_cov <- varargs$post_var_offd_cs_cov
           params$scaling_cov_eta <- varargs$scaling_cov_eta
+          
           params_check(params, fixed_variance, covariance_type,
                        cluster_specific_covariance,
                        variance_prior_type)

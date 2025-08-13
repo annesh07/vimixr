@@ -349,14 +349,15 @@ elbo_cs_sparse <- function(X, inverts, params){
   B1 <- params$post_rate_d_cs_cov
   C1 <- params$post_var_offd_cs_cov
   k0 <- params$scaling_cov_eta
-
+  
   #expectation of inverse of C0, data covariance matrix
   inv_C0 <- array(0, c(D, D, T0))
+  E_C0_inv_inv <- array(0, c(D, D, T0))
   #inverse of expectation of inverse of C0, data covariance matrix
   for (i in 1:T0){
     inv_C0[,,i] <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
+    E_C0_inv_inv[,,i] <- Rfast::Diag.matrix(D, B1[i,]/a1[1,i])
   }
-  E_C0_inv_inv <- 1/inv_C0
   #covariance parameter of eta's
   #L2 <- sweep_3D(E_C0_inv_inv, 1/(1/k0 + RP), c(D, D, T0))
 
@@ -369,16 +370,16 @@ elbo_cs_sparse <- function(X, inverts, params){
   for (i in 1:T0){
     temp <- inv_C0[,,i]
     e200[i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
-    e201[i] <- -(1/(2*k0))*mat_mult_t(L1[i,,drop=FALSE], temp,
+    e201[i] <- -(0.5/k0)*mat_mult_t(L1[i,,drop=FALSE], temp,
                                     L1[i,,drop=FALSE])
     e202[i] <- (1/k0)*mat_mult_t(L1[i,,drop=FALSE], temp, Mu0)
     #for data
     e30[,i] <- -0.5*quadratic_form_diag(X, temp)
     e31[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
   }
-  e203 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*mat_mult_t(Mu0, x, Mu0)})
-  e20 <- -0.5*D*T0*log(2*pi) + 0.5*D*T0*log(k0) + sum(e200) + sum(e201) -
-    (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + sum(e203)
+  e203 <- apply(inv_C0, 3, function(x){-(0.5/k0)*mat_mult_t(Mu0, x, Mu0)})
+  e20 <- -0.5*D*T0*log(2*pi) - 0.5*D*T0*log(k0) + sum(e200) + 
+    sum(e201) - (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + sum(e203)
 
   e210 <- rep(0, T0)
   for (i in 1:T0){
@@ -386,7 +387,8 @@ elbo_cs_sparse <- function(X, inverts, params){
                      (a0[1,i] - 1)*(digamma(a1[1,i]) - log(B1[i,])) - 
                      b0[i,]*a1[1,i]/B1[i,])
   }
-  e21 <- sum(e210) + sum(-log(2*c0) - C1[!diag(D)]/c0)
+  e21 <- sum(e210) + sum(-log(2*c0) - 1/(C1[!diag(D)]*c0))
+  
   e2 <- e20 + e21
 
   #the data X
@@ -397,12 +399,12 @@ elbo_cs_sparse <- function(X, inverts, params){
   e420 <- rep(0, T0)
   e410 <- rep(0,T0)
   for (i in 1:T0){
-    e410[i] <- 0.5*sum(log(B1[i,]/a1[1,i]))
+    e410[i] <- 0.5*sum(log(a1[1,i]/B1[i,]))
     e420[i] <- sum(a1[1,i]*log(B1[i,]) - lgamma(a1[1,i]) +
                      (a1[1,i] -1)*(digamma(a1[1,i]) - log(B1[i,])) - a1[1,i])
   }
-  e4 <- -0.5*D*T0*log(2*pi + 1) + sum(e410/(1/k0 + RP)) +
-    sum(e420) + sum(-log(2*C1[!diag(D)]) - 1)
+  e4 <- -0.5*D*T0*log(2*pi + 1) + 0.5*D*sum(log(1/k0 + RP)) + sum(e410) +
+    sum(e420) + sum(-log(2*C1[!diag(D)]) - 1/(C1[!diag(D)]^2))
 
   return(c("e_mean_cov"=e2, "e_data"=e3, "me_var"=-e4))
 }

@@ -482,16 +482,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           RP <- Rfast::colsums(P)
           a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
           for (i in 1:T0){
-            # L2i <- (1/(1/k0 + RP[i]))*(B1[i,]/a1[1,i])
-            # B1[i,] <- b0[i,] + 0.5*Rfast::eachcol.apply(X^2, P[,i], oper = "*") -
-            #   Rfast::eachcol.apply(X, P[,i], oper = "*")*L1[i,] +
-            #   0.5*RP[i]*(L1[i,]^2 + L2i)
-            B1[i,] <- b0[i,] + 0.5*Rfast::eachcol.apply(X^2, P[,i], oper = "*") 
-            # C01 <- 1/c0 + abs(t_mat_mult(X, diag(P[,i]), X) -
-            #   t_mat_mult(X, P[,i, drop = FALSE], L1[i,, drop = FALSE]) +
-            #   t_mat_mult(L1[i,, drop = FALSE], t(P[,i, drop = FALSE]), X) +
-            #   RP[i]*mat_mult(t(L1[i,, drop = FALSE]), L1[i,, drop = FALSE]))
-            C01 <- 1/c0 + abs(t_mat_mult(X, diag(P[,i]), X))
+            B1[i,] <- b0[i,] + 0.5*Rfast::eachcol.apply(X^2, P[,i], oper = "*") +
+              (0.5/k0)*(Mu0^2)
+            C01 <- 1/c0 + abs(t_mat_mult(X, diag(P[,i]), X) + 
+                                (1/k0)*mat_mult(t(Mu0), Mu0))
             C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
             L1[i,] <- (Mu0/k0 +
                          Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
@@ -512,15 +506,11 @@ CVI_update_function <- function(fixed_variance = FALSE,
                                               L1[i,,drop=FALSE])
             P232[1,i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
           }
-          #P_const <- -0.5*D*(log(2*pi) + 1/(1/k0 + RP))
-          P_const <- -0.5*D*( 1/(1/k0 + RP))
+          P_const <- -0.5*D*(1/(1/k0 + RP))
           #log probability matrix update
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233
 
-          # Plog <- P2 + P230 + matrix((P_const + P231), nrow = N, ncol = T0,
-          #                            byrow = TRUE)
-          #Plog <- P2 + P230 + P233
           #log-sum-exp trick
           Plog <- t(apply(Plog, 1, function(x){
             mx <- max(x)
@@ -538,7 +528,6 @@ CVI_update_function <- function(fixed_variance = FALSE,
           
           params$post_shape_d_cs_cov <- a1
           params$post_rate_d_cs_cov <- B1
-          params$post_var_offd_cs_cov <- C1
           params$post_mean_eta <- L1
           params$log_prob_matrix <- Plog
           params$P <- P
