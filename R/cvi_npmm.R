@@ -152,8 +152,12 @@
 #' Default is zero vector
 #' @param post_mean_eta initial value of posterior update for the DP mean
 #' parameter
-#' @param log_prob_matrix logarithm of cluster allocation probability matrix
-#' @param maxit maximum number of iterations. Default is 100
+#' @param log_prob_matrix logarithm of cluster allocation probability matrix. 
+#' Default is NULL
+#' @param maxit maximum number of iterations. Default is 1000
+#' @param n_inits Number of random initialisations if log_prob_matrix and other 
+#' case-specific hyperparameters are NULL. Default is 10
+#' @param parallel Logical input for parallelisation. Default is TRUE
 #' @param fixed_variance covariance matrix of the data is considered known (fixed)
 #' or unknown. Default is FALSE
 #' @param covariance_type covariance matrix is considered diagonal or full.
@@ -185,6 +189,8 @@
 #' theme_minimal
 #' @importFrom rlang .data
 #' @importFrom stats prcomp
+#' @importFrom parallelly availableCores
+#' @importFrom utils tail
 #'
 #' @export
 #'
@@ -212,8 +218,10 @@ cvi_npmm <- function(X, variational_params,
                      prior_shape_alpha, prior_rate_alpha,
                      post_shape_alpha, post_rate_alpha,
                      prior_mean_eta, post_mean_eta,
-                     log_prob_matrix,
-                     maxit = 100,
+                     log_prob_matrix = NULL,
+                     maxit = 1000,
+                     n_inits = 10,
+                     parallel = TRUE,
                      covariance_type="full", fixed_variance=FALSE,
                      cluster_specific_covariance=TRUE,
                      variance_prior_type=c("IW", "decomposed", "sparse",
@@ -223,357 +231,408 @@ cvi_npmm <- function(X, variational_params,
   N <- nrow(X)
   D <- ncol(X)
   T0 <- variational_params
-  log_prob_matrix <- log_prob_matrix[, order(Rfast::colsums(exp(log_prob_matrix)),
-                                           decreasing = TRUE)]
   varargs <- list(...)
-  params <- list()
-  inverts <- list()
-
-  params$N <- N #number of samples
-  params$D <- D # number of variables
-  params$T0 <- T0
-
-  params$prior_mean_eta <- prior_mean_eta
-  params$prior_shape_alpha <- prior_shape_alpha
-  params$prior_rate_alpha <- prior_rate_alpha
-  params$post_shape_alpha <- post_shape_alpha
-  params$post_rate_alpha <- post_rate_alpha
-  params$post_mean_eta <- post_mean_eta
-
-  params$log_prob_matrix <- log_prob_matrix
-  params$P <- t(apply(exp(log_prob_matrix), 1, function(x){x/sum(x)}))
-  RP <- Rfast::colsums(params$P)
-
-
-  #updating the parameter list based on the conditions
-  if(covariance_type == "diagonal") {
-
-    if(fixed_variance) {
-      params$prior_precision_scalar_eta <- varargs$prior_precision_scalar_eta
-      params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
-      params$cov_data <- varargs$cov_data
-      params_check(params, fixed_variance, covariance_type,
-                   cluster_specific_covariance,
-                   variance_prior_type)
-
-      C00 <- diag(D)/varargs$prior_precision_scalar_eta #covariance of DP mean parameters
-      inverts[["inv_C0"]] <- Rfast::spdinv(varargs$cov_data)
-      inverts[["inv_C00"]] <- Rfast::spdinv(C00)
-
-    } else {
-      params$prior_shape_scalar_cov <- varargs$prior_shape_scalar_cov
-      params$prior_rate_scalar_cov <- varargs$prior_rate_scalar_cov
-      params$post_shape_scalar_cov <- varargs$post_shape_scalar_cov
-      params$post_rate_scalar_cov <- varargs$post_rate_scalar_cov
-      params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
-      params$prior_precision_scalar_eta <- varargs$prior_precision_scalar_eta
-      params_check(params, fixed_variance, covariance_type,
-                   cluster_specific_covariance,
-                   variance_prior_type)
-
-      C00 <- diag(D)/varargs$prior_precision_scalar_eta #covariance of DP mean parameters
-      inverts[["inv_C00"]] <- Rfast::spdinv(C00)
-
+  
+  #if multi-initialisation is required
+  need_random_logP <- is.null(log_prob_matrix)
+  sparse_case <- (covariance_type == "full" && !fixed_variance && cluster_specific_covariance && variance_prior_type == "sparse")
+  need_random_priors <- sparse_case && (is.null(varargs$prior_shape_d_cs_cov) || is.null(varargs$prior_rate_d_cs_cov))
+  effective_n_inits <- if (need_random_logP || need_random_priors) n_inits else 1L
+  
+  # Unified list of inputs as configs
+  configs <- vector("list", effective_n_inits)
+  for (i in 1:effective_n_inits){
+    config_i <- list(
+      log_prob_matrix = if (need_random_logP) generate_log_prob(N, T0) else log_prob_matrix
+    )
+    if (sparse_case) {
+      if (need_random_priors) {
+        # Random for this init (generate fresh)
+        cs_priors <- generate_cs_priors(T0, D)
+        config_i$prior_shape_d_cs_cov <- cs_priors$prior_shape_d_cs_cov
+        config_i$prior_rate_d_cs_cov <- cs_priors$prior_rate_d_cs_cov
+      } else {
+        # Fixed: Replicate provided across all inits
+        config_i$prior_shape_d_cs_cov <- varargs$prior_shape_d_cs_cov
+        config_i$prior_rate_d_cs_cov <- varargs$prior_rate_d_cs_cov
+      }
     }
-
-  } else if(covariance_type == "full") {
-
-    if(fixed_variance) {
-      params$post_cov_eta <- varargs$post_cov_eta
-      params$cov_data <- varargs$cov_data
-      params$prior_cov_eta <- varargs$prior_cov_eta
-      params_check(params, fixed_variance, covariance_type,
-                   cluster_specific_covariance,
-                   variance_prior_type)
-
-      inverts[["inv_C0"]] <- Rfast::spdinv(varargs$cov_data)
-      inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
-
-
-    } else {
-      if(!cluster_specific_covariance) {
-        if(variance_prior_type == "IW"){
-          params$prior_df_cov <- varargs$prior_df_cov
-          params$prior_scale_cov <- varargs$prior_scale_cov
-          params$post_df_cov <- varargs$post_df_cov
-          params$post_scale_cov <- varargs$post_scale_cov
-          params$post_cov_eta <- varargs$post_cov_eta
-          params$prior_cov_eta <- varargs$prior_cov_eta
-          params_check(params, fixed_variance, covariance_type,
-                       cluster_specific_covariance,
-                       variance_prior_type)
-
-          inverts[["inv_V0"]] <- Rfast::spdinv(varargs$prior_scale_cov)
-          inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
-
-
-        } else if (variance_prior_type == "decomposed"){
-          params$prior_shape_diag_decomp <- varargs$prior_shape_diag_decomp
-          params$prior_rate_diag_decomp <- varargs$prior_rate_diag_decomp
-          params$prior_mean_offdiag_decomp <- varargs$prior_mean_offdiag_decomp
-          params$prior_var_offdiag_decomp <- varargs$prior_var_offdiag_decomp
-          params$post_shape_diag_decomp <- varargs$post_shape_diag_decomp
-          params$post_rate_diag_decomp <- varargs$post_rate_diag_decomp
-          params$post_mean_offdiag_decomp <- varargs$post_mean_offdiag_decomp
-          params$post_var_offdiag_decomp <- varargs$post_var_offdiag_decomp
-          params$post_cov_eta <- varargs$post_cov_eta
-          params$prior_cov_eta <- varargs$prior_cov_eta
-          params_check(params, fixed_variance, covariance_type,
-                       cluster_specific_covariance,
-                       variance_prior_type)
-
-          inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
-
-
-        } else {
-          stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
+    configs[[i]] <- config_i
+  }
+  
+  run_single <- function(config){
+    params <- list()
+    inverts <- list()
+    
+    params$N <- N 
+    params$D <- D
+    params$T0 <- T0
+    params$prior_mean_eta <- prior_mean_eta
+    params$prior_shape_alpha <- prior_shape_alpha
+    params$prior_rate_alpha <- prior_rate_alpha
+    params$post_shape_alpha <- post_shape_alpha
+    params$post_rate_alpha <- post_rate_alpha
+    params$post_mean_eta <- post_mean_eta
+    
+    #log-probability matrix based on input
+    params$log_prob_matrix <- config$log_prob_matrix
+    params$P <- t(apply(exp(log_prob_matrix), 1, function(x){x/sum(x)}))
+    RP <- Rfast::colsums(params$P)
+    
+    #updating the parameter list based on the conditions
+    if(covariance_type == "diagonal") {
+      
+      if(fixed_variance) {
+        params$prior_precision_scalar_eta <- varargs$prior_precision_scalar_eta
+        params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
+        params$cov_data <- varargs$cov_data
+        params_check(params, fixed_variance, covariance_type,
+                     cluster_specific_covariance,
+                     variance_prior_type)
+        
+        C00 <- diag(D)/varargs$prior_precision_scalar_eta #covariance of DP mean parameters
+        inverts[["inv_C0"]] <- Rfast::spdinv(varargs$cov_data)
+        inverts[["inv_C00"]] <- Rfast::spdinv(C00)
+        
+      } else {
+        params$prior_shape_scalar_cov <- varargs$prior_shape_scalar_cov
+        params$prior_rate_scalar_cov <- varargs$prior_rate_scalar_cov
+        params$post_shape_scalar_cov <- varargs$post_shape_scalar_cov
+        params$post_rate_scalar_cov <- varargs$post_rate_scalar_cov
+        params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
+        params$prior_precision_scalar_eta <- varargs$prior_precision_scalar_eta
+        params_check(params, fixed_variance, covariance_type,
+                     cluster_specific_covariance,
+                     variance_prior_type)
+        
+        C00 <- diag(D)/varargs$prior_precision_scalar_eta #covariance of DP mean parameters
+        inverts[["inv_C00"]] <- Rfast::spdinv(C00)
+        
+      }
+      
+    } else if(covariance_type == "full") {
+      
+      if(fixed_variance) {
+        params$post_cov_eta <- varargs$post_cov_eta
+        params$cov_data <- varargs$cov_data
+        params$prior_cov_eta <- varargs$prior_cov_eta
+        params_check(params, fixed_variance, covariance_type,
+                     cluster_specific_covariance,
+                     variance_prior_type)
+        
+        inverts[["inv_C0"]] <- Rfast::spdinv(varargs$cov_data)
+        inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
+        
+        
+      } else {
+        if(!cluster_specific_covariance) {
+          if(variance_prior_type == "IW"){
+            params$prior_df_cov <- varargs$prior_df_cov
+            params$prior_scale_cov <- varargs$prior_scale_cov
+            params$post_df_cov <- varargs$post_df_cov
+            params$post_scale_cov <- varargs$post_scale_cov
+            params$post_cov_eta <- varargs$post_cov_eta
+            params$prior_cov_eta <- varargs$prior_cov_eta
+            params_check(params, fixed_variance, covariance_type,
+                         cluster_specific_covariance,
+                         variance_prior_type)
+            
+            inverts[["inv_V0"]] <- Rfast::spdinv(varargs$prior_scale_cov)
+            inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
+            
+            
+          } else if (variance_prior_type == "decomposed"){
+            params$prior_shape_diag_decomp <- varargs$prior_shape_diag_decomp
+            params$prior_rate_diag_decomp <- varargs$prior_rate_diag_decomp
+            params$prior_mean_offdiag_decomp <- varargs$prior_mean_offdiag_decomp
+            params$prior_var_offdiag_decomp <- varargs$prior_var_offdiag_decomp
+            params$post_shape_diag_decomp <- varargs$post_shape_diag_decomp
+            params$post_rate_diag_decomp <- varargs$post_rate_diag_decomp
+            params$post_mean_offdiag_decomp <- varargs$post_mean_offdiag_decomp
+            params$post_var_offdiag_decomp <- varargs$post_var_offdiag_decomp
+            params$post_cov_eta <- varargs$post_cov_eta
+            params$prior_cov_eta <- varargs$prior_cov_eta
+            params_check(params, fixed_variance, covariance_type,
+                         cluster_specific_covariance,
+                         variance_prior_type)
+            
+            inverts[["inv_C00"]] <- Rfast::spdinv(varargs$prior_cov_eta)
+            
+            
+          } else {
+            stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
                when 'cluster_specific_covariance' is FALSE")
-        }
-
-      }else{
-        if(variance_prior_type == "IW"){
-          params$prior_df_cs_cov <- varargs$prior_df_cs_cov
-          params$prior_scale_cs_cov <- varargs$prior_scale_cs_cov
-          params$post_df_cs_cov <- varargs$post_df_cs_cov
-          params$post_scale_cs_cov <- varargs$post_scale_cs_cov
-          params$scaling_cov_eta <- varargs$scaling_cov_eta
-          params_check(params, fixed_variance, covariance_type,
-                       cluster_specific_covariance,
-                       variance_prior_type)
-
-
-        } else if (variance_prior_type == "sparse"){
-          params$prior_shape_d_cs_cov <- varargs$prior_shape_d_cs_cov
-          params$prior_rate_d_cs_cov <- varargs$prior_rate_d_cs_cov
-          params$prior_var_offd_cs_cov <- varargs$prior_var_offd_cs_cov
-          params$post_shape_d_cs_cov <- varargs$post_shape_d_cs_cov
-          params$post_rate_d_cs_cov <- varargs$post_rate_d_cs_cov
-          params$post_var_offd_cs_cov <- varargs$post_var_offd_cs_cov
-          params$scaling_cov_eta <- varargs$scaling_cov_eta
+          }
           
-          params_check(params, fixed_variance, covariance_type,
-                       cluster_specific_covariance,
-                       variance_prior_type)
-
-
-        } else if (variance_prior_type == "off-diagonal normal"){
-          params$prior_shape_d_cs_cov <- varargs$prior_shape_d_cs_cov
-          params$prior_rate_d_cs_cov <- varargs$prior_rate_d_cs_cov
-          params$prior_var_offd_cs_cov <- varargs$prior_var_offd_cs_cov
-          params$post_shape_d_cs_cov <- varargs$post_shape_d_cs_cov
-          params$post_rate_d_cs_cov <- varargs$post_rate_d_cs_cov
-          params$post_mean_offd_cs_cov <- varargs$post_mean_offd_cs_cov
-          params$scaling_cov_eta <- varargs$scaling_cov_eta
-          params_check(params, fixed_variance, covariance_type,
-                       cluster_specific_covariance,
-                       variance_prior_type)
-
-
-        } else {
-          stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
+        }else{
+          if(variance_prior_type == "IW"){
+            params$prior_df_cs_cov <- varargs$prior_df_cs_cov
+            params$prior_scale_cs_cov <- varargs$prior_scale_cs_cov
+            params$post_df_cs_cov <- varargs$post_df_cs_cov
+            params$post_scale_cs_cov <- varargs$post_scale_cs_cov
+            params$scaling_cov_eta <- varargs$scaling_cov_eta
+            params_check(params, fixed_variance, covariance_type,
+                         cluster_specific_covariance,
+                         variance_prior_type)
+            
+            
+          } else if (variance_prior_type == "sparse"){
+            params$prior_shape_d_cs_cov <- config$prior_shape_d_cs_cov
+            params$prior_rate_d_cs_cov <- config$prior_rate_d_cs_cov
+            params$prior_var_offd_cs_cov <- varargs$prior_var_offd_cs_cov
+            params$post_shape_d_cs_cov <- varargs$post_shape_d_cs_cov
+            params$post_rate_d_cs_cov <- varargs$post_rate_d_cs_cov
+            params$post_var_offd_cs_cov <- varargs$post_var_offd_cs_cov
+            params$scaling_cov_eta <- varargs$scaling_cov_eta
+            
+            params_check(params, fixed_variance, covariance_type,
+                         cluster_specific_covariance,
+                         variance_prior_type)
+            
+            
+          } else if (variance_prior_type == "off-diagonal normal"){
+            params$prior_shape_d_cs_cov <- varargs$prior_shape_d_cs_cov
+            params$prior_rate_d_cs_cov <- varargs$prior_rate_d_cs_cov
+            params$prior_var_offd_cs_cov <- varargs$prior_var_offd_cs_cov
+            params$post_shape_d_cs_cov <- varargs$post_shape_d_cs_cov
+            params$post_rate_d_cs_cov <- varargs$post_rate_d_cs_cov
+            params$post_mean_offd_cs_cov <- varargs$post_mean_offd_cs_cov
+            params$scaling_cov_eta <- varargs$scaling_cov_eta
+            params_check(params, fixed_variance, covariance_type,
+                         cluster_specific_covariance,
+                         variance_prior_type)
+            
+            
+          } else {
+            stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
                when 'cluster_specific_covariance' is TRUE")
+          }
         }
+        
       }
-
+    } else {
+      stop("covariance_type can only be either 'diagonal' or 'full'.")
     }
-  } else {
-    stop("covariance_type can only be either 'diagonal' or 'full'.")
-  }
-
-  #store the output of ELBO function for every iteration of updates
-  elbo_values <- list()
-  elbo_values[[1]] <- ELBO_function(fixed_variance, covariance_type,
-                                    cluster_specific_covariance,
-                                    variance_prior_type, X, inverts, params)
-
-  for (m in 1:maxit){
-
-    updated_params <- CVI_update_function(fixed_variance, covariance_type,
+    
+    #store the output of ELBO function for every iteration of updates
+    elbo_values <- list()
+    elbo_values[[1]] <- ELBO_function(fixed_variance, covariance_type,
+                                      cluster_specific_covariance,
+                                      variance_prior_type, X, inverts, params)
+    
+    for (m in 1:maxit){
+      
+      updated_params <- CVI_update_function(fixed_variance, covariance_type,
+                                            cluster_specific_covariance,
+                                            variance_prior_type,
+                                            X, inverts, params)
+      
+      params <- updated_params
+      
+      elbo_values[[m+1]] <- ELBO_function(fixed_variance, covariance_type,
                                           cluster_specific_covariance,
-                                          variance_prior_type,
-                                          X, inverts, params)
-
-    params <- updated_params
-
-    elbo_values[[m+1]] <- ELBO_function(fixed_variance, covariance_type,
-                                        cluster_specific_covariance,
-                                        variance_prior_type, X, inverts, params)
-    if (abs(sum(elbo_values[[m]]) - sum(elbo_values[[m + 1]])) < 0.000001 ){
-      break
+                                          variance_prior_type, X, inverts, params)
+      if (abs(sum(elbo_values[[m]]) - sum(elbo_values[[m + 1]])) < 0.000001 ){
+        break
+      }
+      message("outer loop: ", m,"\n", elbo_values[[m + 1]], '\n', sep="")
     }
-    message("outer loop: ", m,"\n", elbo_values[[m + 1]], '\n', sep="")
-  }
-  W1 <- params$post_shape_alpha
-  W2 <- params$post_rate_alpha
-  Plog <- params$log_prob_matrix
-
-  alpha0 <- W1/W2 #posterior concentration parameter
-  clustering <- apply(Plog, MARGIN = 1, FUN=which.max)
-  clust <- table(clustering) #clusters with proportions
-  clustnum <- length(unique(clustering)) #number of clusters
-  #plots
-  pca <- prcomp(X)
-  pca_df <- data.frame("PC1" = pca$x[,1],
-                       "PC2" = pca$x[,2],
-                       "Cluster" = as.factor(clustering))
-  ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2,
+    W1 <- params$post_shape_alpha
+    W2 <- params$post_rate_alpha
+    Plog <- params$log_prob_matrix
+    
+    alpha0 <- W1/W2 #posterior concentration parameter
+    clustering <- apply(Plog, MARGIN = 1, FUN=which.max)
+    clust <- table(clustering) #clusters with proportions
+    clustnum <- length(unique(clustering)) #number of clusters
+    #plots
+    pca <- prcomp(X)
+    pca_df <- data.frame("PC1" = pca$x[,1],
+                         "PC2" = pca$x[,2],
+                         "Cluster" = as.factor(clustering))
+    ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2,
                                                        color = .data$Cluster,
-                                                     shape = .data$Cluster)) +
-    ggplot2::geom_point(size = 3, alpha = 0.8) +
-    ggplot2::labs(title = "PCA projection of clustered data", x = "PC 1", y = "PC 2") +
-    ggplot2::theme_minimal()
-
-  Elbo <- unlist(lapply(elbo_values[-1], sum))
-  Elbo_df <- data.frame(x = 1:length(Elbo),
-                        y = Elbo)
-  ggplot_ELBO <- ggplot2::ggplot(Elbo_df, ggplot2::aes(x = .data$x,
-                                                       y = .data$y)) +
-    ggplot2::geom_line() +
-    ggplot2::labs(title = "ELBO Optimisation", x = "Iterations", y = "ELBO") +
-    ggplot2::theme_minimal()
-
-  post_distribution = list()
-  L1 <- params$post_mean_eta
-
-  if(covariance_type == "diagonal") {
-
-    if(fixed_variance) {
-      L2 <- params$post_precision_scalar_eta
-
-      post_distribution[["Mean"]] = L1/c(L2)
-
-    } else {
-      G1 <- params$post_shape_scalar_cov
-      G2 <- params$post_rate_scalar_cov
-      L2 <- params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
-
-      post_distribution[["Mean"]] = L1/c(L2)
-      post_distribution[["Precision"]] = (G1/G2)*diag(D)
-      #G2/G1 instead of G1/G2 because prior on the precision diagonal scalar
-    }
-
-  } else if(covariance_type == "full") {
-
-    if(fixed_variance) {
-      L2 <- params$post_cov_eta
-      L21 <- matrix(0, nrow = T0, ncol = D)
-      for (i in 1:T0){
-        L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
+                                                       shape = .data$Cluster)) +
+      ggplot2::geom_point(size = 3, alpha = 0.8) +
+      ggplot2::labs(title = "PCA projection of clustered data", x = "PC 1", y = "PC 2") +
+      ggplot2::theme_minimal()
+    
+    Elbo <- unlist(lapply(elbo_values[-1], sum))
+    Elbo_df <- data.frame(x = 1:length(Elbo),
+                          y = Elbo)
+    ggplot_ELBO <- ggplot2::ggplot(Elbo_df, ggplot2::aes(x = .data$x,
+                                                         y = .data$y)) +
+      ggplot2::geom_line() +
+      ggplot2::labs(title = "ELBO Optimisation", x = "Iterations", y = "ELBO") +
+      ggplot2::theme_minimal()
+    
+    post_distribution = list()
+    L1 <- params$post_mean_eta
+    
+    if(covariance_type == "diagonal") {
+      
+      if(fixed_variance) {
+        L2 <- params$post_precision_scalar_eta
+        
+        post_distribution[["Mean"]] = L1/c(L2)
+        
+      } else {
+        G1 <- params$post_shape_scalar_cov
+        G2 <- params$post_rate_scalar_cov
+        L2 <- params$post_precision_scalar_eta <- varargs$post_precision_scalar_eta
+        
+        post_distribution[["Mean"]] = L1/c(L2)
+        post_distribution[["Precision"]] = (G1/G2)*diag(D)
+        #G2/G1 instead of G1/G2 because prior on the precision diagonal scalar
       }
-
-      post_distribution[["Mean"]] = L21
-
-    } else {
-      if(!cluster_specific_covariance) {
-        if(variance_prior_type == "IW"){
-          nu <- params$post_df_cov
-          V <- params$post_scale_cov
-          L2 <- params$post_cov_eta
-
-          L21 <- matrix(0, nrow = T0, ncol = D)
-          for (i in 1:T0){
-            L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
-          }
-
-          post_distribution[["Mean"]] = L21
-          post_distribution[["Precision"]] = nu*V
-
-        } else if (variance_prior_type == "decomposed"){
-          a1 <- params$post_shape_diag_decomp
-          b1 <- params$post_rate_diag_decomp
-          mu1 <- params$post_mean_offdiag_decomp
-          c1 <- params$post_var_offdiag_decomp
-          L2 <- params$post_cov_eta
-
-          mean_lower <- matrix(0, nrow = D, ncol = D) #mean matrix of the decomposed
-          mean_lower[lower.tri(mean_lower, diag = FALSE)] <- mu1
-          sigma_lower <- matrix(0, nrow = D, ncol = D) #var matrix of the decomposed
-          sigma_lower[lower.tri(sigma_lower, diag = FALSE)] <- c1
-          mean_L <- mean_lower + diag(sqrt(1/b1)*sqrt(pi)/beta(a1,0.5))
-          diag(sigma_lower) <- (1/b1)*(a1 - (sqrt(pi)/beta(a1,0.5))^2)
-          #expected inverse of C0; covariance matrix of data
-          inv_C0 <- mat_mult(mean_L, t(mean_L)) +
-            diag(Rfast::rowsums(sigma_lower))
-
-          L21 <- matrix(0, nrow = T0, ncol = D)
-          for (i in 1:T0){
-            L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
-          }
-
-          post_distribution[["Mean"]] = L21
-          post_distribution[["Precision"]] = inv_C0
-
-        } else {
-          stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
+      
+    } else if(covariance_type == "full") {
+      
+      if(fixed_variance) {
+        L2 <- params$post_cov_eta
+        L21 <- matrix(0, nrow = T0, ncol = D)
+        for (i in 1:T0){
+          L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
+        }
+        
+        post_distribution[["Mean"]] = L21
+        
+      } else {
+        if(!cluster_specific_covariance) {
+          if(variance_prior_type == "IW"){
+            nu <- params$post_df_cov
+            V <- params$post_scale_cov
+            L2 <- params$post_cov_eta
+            
+            L21 <- matrix(0, nrow = T0, ncol = D)
+            for (i in 1:T0){
+              L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
+            }
+            
+            post_distribution[["Mean"]] = L21
+            post_distribution[["Precision"]] = nu*V
+            
+          } else if (variance_prior_type == "decomposed"){
+            a1 <- params$post_shape_diag_decomp
+            b1 <- params$post_rate_diag_decomp
+            mu1 <- params$post_mean_offdiag_decomp
+            c1 <- params$post_var_offdiag_decomp
+            L2 <- params$post_cov_eta
+            
+            mean_lower <- matrix(0, nrow = D, ncol = D) #mean matrix of the decomposed
+            mean_lower[lower.tri(mean_lower, diag = FALSE)] <- mu1
+            sigma_lower <- matrix(0, nrow = D, ncol = D) #var matrix of the decomposed
+            sigma_lower[lower.tri(sigma_lower, diag = FALSE)] <- c1
+            mean_L <- mean_lower + diag(sqrt(1/b1)*sqrt(pi)/beta(a1,0.5))
+            diag(sigma_lower) <- (1/b1)*(a1 - (sqrt(pi)/beta(a1,0.5))^2)
+            #expected inverse of C0; covariance matrix of data
+            inv_C0 <- mat_mult(mean_L, t(mean_L)) +
+              diag(Rfast::rowsums(sigma_lower))
+            
+            L21 <- matrix(0, nrow = T0, ncol = D)
+            for (i in 1:T0){
+              L21[i,] = mat_mult(L1[i,, drop = FALSE], L2[,,i])
+            }
+            
+            post_distribution[["Mean"]] = L21
+            post_distribution[["Precision"]] = inv_C0
+            
+          } else {
+            stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
                when 'cluster_specific_covariance' is FALSE")
-        }
-
-      }else{
-        if(variance_prior_type == "IW"){
-          nu1 <- params$post_df_cs_cov
-          V1 <- params$post_scale_cs_cov
-
-          V1_inv <- array(apply(V1, 3, function(x){spdinv(x)}), dim = dim(V1))
-          #expectation of inverse of data covariance matrix
-          inv_C0 <- sweep_3D(V1_inv, nu1, c(D, D, T0))
-
-          post_distribution[["Mean"]] = L1
-          post_distribution[["Precision_cs"]] = inv_C0
-
-        } else if (variance_prior_type == "sparse"){
-          a1 <- params$post_shape_d_cs_cov
-          B1 <- params$post_rate_d_cs_cov
-
-          #expectation of inverse of C0, data covariance matrix
-          inv_C0 <- array(0, c(D, D, T0))
-          for (i in 1:T0){
-            inv_C0[,,i] <- temp <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
           }
-
-          post_distribution[["Mean"]] = L1
-          post_distribution[["Precision_cs"]] = inv_C0
-          post_distribution[["Precision_cs_a1"]] = a1
-          post_distribution[["Precision_cs_B1"]] = B1
-
-        } else if (variance_prior_type == "off-diagonal normal"){
-          a1 <- params$post_shape_d_cs_cov
-          B1 <- params$post_rate_d_cs_cov
-          C1 <- params$post_mean_offd_cs_cov
-
-          #expectation of inverse of data covariance matrix
-          inv_C0 <- array(0, c(D, D, T0))
-          for (i in 1:T0){
-            inv_C0[,,i] <- temp <- Rfast::Diag.fill(C1[,,i], a1[1,i]/B1[i,])}
-
-          post_distribution[["Mean"]] = L1
-          post_distribution[["Precision_cs"]] = inv_C0
-
-        } else {
-          stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
+          
+        }else{
+          if(variance_prior_type == "IW"){
+            nu1 <- params$post_df_cs_cov
+            V1 <- params$post_scale_cs_cov
+            
+            V1_inv <- array(apply(V1, 3, function(x){spdinv(x)}), dim = dim(V1))
+            #expectation of inverse of data covariance matrix
+            inv_C0 <- sweep_3D(V1_inv, nu1, c(D, D, T0))
+            
+            post_distribution[["Mean"]] = L1
+            post_distribution[["Precision_cs"]] = inv_C0
+            
+          } else if (variance_prior_type == "sparse"){
+            a1 <- params$post_shape_d_cs_cov
+            B1 <- params$post_rate_d_cs_cov
+            
+            #expectation of inverse of C0, data covariance matrix
+            inv_C0 <- array(0, c(D, D, T0))
+            for (i in 1:T0){
+              inv_C0[,,i] <- temp <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
+            }
+            
+            post_distribution[["Mean"]] = L1
+            post_distribution[["Precision_cs"]] = inv_C0
+            post_distribution[["Precision_cs_a1"]] = a1
+            post_distribution[["Precision_cs_B1"]] = B1
+            
+          } else if (variance_prior_type == "off-diagonal normal"){
+            a1 <- params$post_shape_d_cs_cov
+            B1 <- params$post_rate_d_cs_cov
+            C1 <- params$post_mean_offd_cs_cov
+            
+            #expectation of inverse of data covariance matrix
+            inv_C0 <- array(0, c(D, D, T0))
+            for (i in 1:T0){
+              inv_C0[,,i] <- temp <- Rfast::Diag.fill(C1[,,i], a1[1,i]/B1[i,])}
+            
+            post_distribution[["Mean"]] = L1
+            post_distribution[["Precision_cs"]] = inv_C0
+            
+          } else {
+            stop("'variance_prior_type' can only be either 'IW' or 'decomposed'
                when 'cluster_specific_covariance' is TRUE")
+          }
         }
+        
       }
-
+    } else {
+      stop("covariance_type can only be either 'diagonal' or 'full'.")
     }
+    
+    
+    posterior <- c(list("alpha" = alpha0, "Cluster number" = clustnum,
+                        "Cluster Proportion" = clust,
+                        "log Probability matrix" = Plog), post_distribution)
+    logBayes <- as.list(elbo_values[length(elbo_values)])$e_data - 
+      as.list(elbo_values[1])$e_data
+    optimisation <- list("ELBO" = elbo_values,
+                         "Iterations" = (length(elbo_values)-1),
+                         "logBF" = logBayes)
+    
+    output <-  list("posterior" = posterior, "optimisation" = optimisation,
+                    "PCA_viz" = ggplot_pca,
+                    "ELBO_viz" = ggplot_ELBO)
+    class(output) <- "CVIoutput"
+    
+    return(output)
+  }
+  
+  # Parallel setup if requested and multi-init
+  if (effective_n_inits > 1 && parallel &&
+         requireNamespace("future", quietly = TRUE) &&
+         requireNamespace("future.apply", quietly = TRUE)){
+    n_cores <- parallelly::availableCores() - 1
+    if (n_cores < 1) n_cores <- 1
+    future::plan(future::multisession, workers = n_cores)  # Local parallel; fallback to sequential if issues
+    results <- future.apply::future_lapply(configs, run_single)
   } else {
-    stop("covariance_type can only be either 'diagonal' or 'full'.")
+    results <- lapply(configs, run_single)
   }
 
-
-  posterior <- c(list("alpha" = alpha0, "Cluster number" = clustnum,
-                    "Cluster Proportion" = clust,
-                    "log Probability matrix" = Plog), post_distribution)
-  logBayes <- as.list(elbo_values[length(elbo_values)])$e_data - 
-    as.list(elbo_values[1])$e_data
-  optimisation <- list("ELBO" = elbo_values,
-                       "Iterations" = (length(elbo_values)-1),
-                       "logBF" = logBayes)
-
-  output <-  list("posterior" = posterior, "optimisation" = optimisation,
-                  "PCA_viz" = ggplot_pca,
-                  "ELBO_viz" = ggplot_ELBO)
-  class(output) <- "CVIoutput"
-
-  return(output)
+  # Select best based on VLL if multi-init; else just the single result
+  if (effective_n_inits > 1){
+    final_elbos <- sapply(results, 
+                          function(out){as.numeric(utils::tail(out$optimisation$ELBO, 1)[[1]]["e_data"])})
+    best_idx <- which.max(final_elbos)
+    best_result <- results[[best_idx]]
+  } else {
+    best_result <- results[[1]]
+  }
+  
+  return(best_result)  
 }
 

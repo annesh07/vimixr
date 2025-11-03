@@ -13,16 +13,18 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 License: MIT + file LICENSE
 Imports:
-    rmarkdown,
     ggplot2,
     patchwork,
     Rcpp,
     RcppEigen,
     Rfast,
-    rlang
+    rlang,
+    parallelly
 Suggests: 
     knitr,
     rmarkdown,
+    future,
+    future.apply,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 URL: https://github.com/annesh07/vimixr

@@ -13,8 +13,10 @@ cvi_npmm(
   post_rate_alpha,
   prior_mean_eta,
   post_mean_eta,
-  log_prob_matrix,
-  maxit = 100,
+  log_prob_matrix = NULL,
+  maxit = 1000,
+  n_inits = 10,
+  parallel = TRUE,
   covariance_type = "full",
   fixed_variance = FALSE,
   cluster_specific_covariance = TRUE,
@@ -45,9 +47,15 @@ Default is zero vector}
 \item{post_mean_eta}{initial value of posterior update for the DP mean
 parameter}
 
-\item{log_prob_matrix}{logarithm of cluster allocation probability matrix}
+\item{log_prob_matrix}{logarithm of cluster allocation probability matrix.
+Default is NULL}
 
-\item{maxit}{maximum number of iterations. Default is 100}
+\item{maxit}{maximum number of iterations. Default is 1000}
+
+\item{n_inits}{Number of random initialisations if log_prob_matrix and other
+case-specific hyperparameters are NULL. Default is 10}
+
+\item{parallel}{Logical input for parallelisation. Default is TRUE}
 
 \item{covariance_type}{covariance matrix is considered diagonal or full.
 Default is 'full'}
