@@ -156,7 +156,7 @@
 #' Default is NULL
 #' @param maxit maximum number of iterations. Default is 1000
 #' @param n_inits Number of random initialisations if log_prob_matrix and other 
-#' case-specific hyperparameters are NULL. Default is 10
+#' case-specific hyperparameters are NULL. Default is 5
 #' @param parallel Logical input for parallelisation. Default is TRUE
 #' @param fixed_variance covariance matrix of the data is considered known (fixed)
 #' or unknown. Default is FALSE
@@ -220,7 +220,7 @@ cvi_npmm <- function(X, variational_params,
                      prior_mean_eta, post_mean_eta,
                      log_prob_matrix = NULL,
                      maxit = 1000,
-                     n_inits = 10,
+                     n_inits = 5,
                      parallel = TRUE,
                      covariance_type="full", fixed_variance=FALSE,
                      cluster_specific_covariance=TRUE,
@@ -260,7 +260,7 @@ cvi_npmm <- function(X, variational_params,
     configs[[i]] <- config_i
   }
   
-  run_single <- function(config){
+  run_single <- function(config, ...){
     params <- list()
     inverts <- list()
     
@@ -276,7 +276,7 @@ cvi_npmm <- function(X, variational_params,
     
     #log-probability matrix based on input
     params$log_prob_matrix <- config$log_prob_matrix
-    params$P <- t(apply(exp(log_prob_matrix), 1, function(x){x/sum(x)}))
+    params$P <- t(apply(exp(params$log_prob_matrix), 1, function(x){x/sum(x)}))
     RP <- Rfast::colsums(params$P)
     
     #updating the parameter list based on the conditions
@@ -445,26 +445,6 @@ cvi_npmm <- function(X, variational_params,
     clustering <- apply(Plog, MARGIN = 1, FUN=which.max)
     clust <- table(clustering) #clusters with proportions
     clustnum <- length(unique(clustering)) #number of clusters
-    #plots
-    pca <- prcomp(X)
-    pca_df <- data.frame("PC1" = pca$x[,1],
-                         "PC2" = pca$x[,2],
-                         "Cluster" = as.factor(clustering))
-    ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2,
-                                                       color = .data$Cluster,
-                                                       shape = .data$Cluster)) +
-      ggplot2::geom_point(size = 3, alpha = 0.8) +
-      ggplot2::labs(title = "PCA projection of clustered data", x = "PC 1", y = "PC 2") +
-      ggplot2::theme_minimal()
-    
-    Elbo <- unlist(lapply(elbo_values[-1], sum))
-    Elbo_df <- data.frame(x = 1:length(Elbo),
-                          y = Elbo)
-    ggplot_ELBO <- ggplot2::ggplot(Elbo_df, ggplot2::aes(x = .data$x,
-                                                         y = .data$y)) +
-      ggplot2::geom_line() +
-      ggplot2::labs(title = "ELBO Optimisation", x = "Iterations", y = "ELBO") +
-      ggplot2::theme_minimal()
     
     post_distribution = list()
     L1 <- params$post_mean_eta
@@ -603,10 +583,8 @@ cvi_npmm <- function(X, variational_params,
                          "Iterations" = (length(elbo_values)-1),
                          "logBF" = logBayes)
     
-    output <-  list("posterior" = posterior, "optimisation" = optimisation,
-                    "PCA_viz" = ggplot_pca,
-                    "ELBO_viz" = ggplot_ELBO)
-    class(output) <- "CVIoutput"
+    output <-  list("posterior" = posterior, "optimisation" = optimisation)
+    class(output) <- "CVIoutput_partial"
     
     return(output)
   }
@@ -617,8 +595,10 @@ cvi_npmm <- function(X, variational_params,
          requireNamespace("future.apply", quietly = TRUE)){
     n_cores <- parallelly::availableCores() - 1
     if (n_cores < 1) n_cores <- 1
-    future::plan(future::multisession, workers = n_cores)  # Local parallel; fallback to sequential if issues
-    results <- future.apply::future_lapply(configs, run_single)
+    options(future.globals.maxSize = +Inf)
+    options(future.debug = TRUE)
+    future::plan(future::multisession, workers = n_cores)  
+    results <- future.apply::future_lapply(configs, run_single, future.seed = TRUE)
   } else {
     results <- lapply(configs, run_single)
   }
@@ -632,7 +612,31 @@ cvi_npmm <- function(X, variational_params,
   } else {
     best_result <- results[[1]]
   }
+  # Extract data for plots
+  posterior <- best_result$posterior
+  optimisation <- best_result$optimisation
+  clustering <- apply(posterior[["log Probability matrix"]], 1, which.max)
   
+  # PCA plot
+  pca <- prcomp(X)
+  pca_df <- data.frame("PC1" = pca$x[,1], "PC2" = pca$x[,2], "Cluster" = as.factor(clustering))
+  ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2, color = .data$Cluster, shape = .data$Cluster)) +
+    ggplot2::geom_point(size = 3, alpha = 0.8) +
+    ggplot2::labs(title = "PCA projection of clustered data", x = "PC 1", y = "PC 2") +
+    ggplot2::theme_minimal()
+  
+  # ELBO plot
+  Elbo <- unlist(lapply(optimisation$ELBO[-1], sum))
+  Elbo_df <- data.frame(x = 1:length(Elbo), y = Elbo)
+  ggplot_ELBO <- ggplot2::ggplot(Elbo_df, ggplot2::aes(x = .data$x, y = .data$y)) +
+    ggplot2::geom_line() +
+    ggplot2::labs(title = "ELBO Optimisation", x = "Iterations", y = "ELBO") +
+    ggplot2::theme_minimal()
+  
+  # Attach to best_result
+  best_result$PCA_viz <- ggplot_pca
+  best_result$ELBO_viz <- ggplot_ELBO
+  class(best_result) <- "CVIoutput" 
   return(best_result)  
 }
 

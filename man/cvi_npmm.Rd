@@ -15,7 +15,7 @@ cvi_npmm(
   post_mean_eta,
   log_prob_matrix = NULL,
   maxit = 1000,
-  n_inits = 10,
+  n_inits = 5,
   parallel = TRUE,
   covariance_type = "full",
   fixed_variance = FALSE,
@@ -53,7 +53,7 @@ Default is NULL}
 \item{maxit}{maximum number of iterations. Default is 1000}
 
 \item{n_inits}{Number of random initialisations if log_prob_matrix and other
-case-specific hyperparameters are NULL. Default is 10}
+case-specific hyperparameters are NULL. Default is 5}
 
 \item{parallel}{Logical input for parallelisation. Default is TRUE}
 
