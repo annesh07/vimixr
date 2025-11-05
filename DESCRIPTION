@@ -19,12 +19,11 @@ Imports:
     RcppEigen,
     Rfast,
     rlang,
-    parallelly
+    parallel
 Suggests: 
     knitr,
     rmarkdown,
-    future,
-    future.apply,
+    pbapply,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 URL: https://github.com/annesh07/vimixr
