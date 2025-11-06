@@ -154,7 +154,7 @@
 #' parameter
 #' @param log_prob_matrix logarithm of cluster allocation probability matrix. 
 #' Default is NULL
-#' @param maxit maximum number of iterations. Default is 1000
+#' @param maxit maximum number of iterations. Default is 100
 #' @param n_inits Number of random initialisations if log_prob_matrix and other 
 #' case-specific hyperparameters are NULL. Default is 5
 #' @param parallel Logical input for parallelisation. Default is TRUE
@@ -189,7 +189,7 @@
 #' theme_minimal
 #' @importFrom rlang .data
 #' @importFrom stats prcomp
-#' @importFrom parallel detectCores makeCluster stopCluster
+#' @importFrom parallel detectCores makeCluster stopCluster clusterExport
 #' @importFrom utils tail
 #'
 #' @export
@@ -205,7 +205,7 @@
 #'          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
 #'          post_mean_eta = matrix(0.001, 20, ncol(X)),
 #'          log_prob_matrix = t(apply(matrix(-3, nrow(X), 20), 1,
-#'                              function(x){x/sum(x)})), maxit = 1000,
+#'                              function(x){x/sum(x)})), maxit = 100,
 #'          fixed_variance = TRUE, covariance_type = "diagonal",
 #'          prior_precision_scalar_eta = 0.001,
 #'          post_precision_scalar_eta = matrix(0.001, 20, 1),
@@ -219,7 +219,7 @@ cvi_npmm <- function(X, variational_params,
                      post_shape_alpha, post_rate_alpha,
                      prior_mean_eta, post_mean_eta,
                      log_prob_matrix = NULL,
-                     maxit = 1000,
+                     maxit = 100,
                      n_inits = 5,
                      parallel = TRUE,
                      covariance_type="full", fixed_variance=FALSE,
@@ -279,20 +279,19 @@ cvi_npmm <- function(X, variational_params,
                maxit = maxit, 
                varargs = varargs)
   }
-  
   # Parallel setup if requested and multi-init
   if (effective_n_inits > 1 && parallel &&
       requireNamespace("pbapply", quietly = TRUE)) {
     
     n_cores <- parallel::detectCores()
-    
     if (.Platform$OS.type == "unix") {
       results <- pbapply::pblapply(configs, cvi_wrapper, cl = n_cores)
       
     } else {
-      n_cores <- max(1, n_cores - 1)  
+      n_cores <- max(1, n_cores - 1)
       cl <- parallel::makeCluster(n_cores)
       on.exit(parallel::stopCluster(cl), add = TRUE)
+      parallel::clusterExport(cl, varlist = ls(environment()), envir = environment())
       results <- pbapply::pblapply(configs, cvi_wrapper, cl = cl)
     }
     

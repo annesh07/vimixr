@@ -14,7 +14,7 @@ cvi_npmm(
   prior_mean_eta,
   post_mean_eta,
   log_prob_matrix = NULL,
-  maxit = 1000,
+  maxit = 100,
   n_inits = 5,
   parallel = TRUE,
   covariance_type = "full",
@@ -50,7 +50,7 @@ parameter}
 \item{log_prob_matrix}{logarithm of cluster allocation probability matrix.
 Default is NULL}
 
-\item{maxit}{maximum number of iterations. Default is 1000}
+\item{maxit}{maximum number of iterations. Default is 100}
 
 \item{n_inits}{Number of random initialisations if log_prob_matrix and other
 case-specific hyperparameters are NULL. Default is 5}
@@ -241,7 +241,7 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
          post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
          post_mean_eta = matrix(0.001, 20, ncol(X)),
          log_prob_matrix = t(apply(matrix(-3, nrow(X), 20), 1,
-                             function(x){x/sum(x)})), maxit = 1000,
+                             function(x){x/sum(x)})), maxit = 100,
          fixed_variance = TRUE, covariance_type = "diagonal",
          prior_precision_scalar_eta = 0.001,
          post_precision_scalar_eta = matrix(0.001, 20, 1),
