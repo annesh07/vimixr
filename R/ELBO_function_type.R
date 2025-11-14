@@ -351,13 +351,9 @@ elbo_cs_sparse <- function(X, inverts, params){
   k0 <- params$scaling_cov_eta
   
   #expectation of inverse of C0, data covariance matrix
-  inv_C0 <- array(0, c(D, D, T0))
-  E_C0_inv_inv <- array(0, c(D, D, T0))
-  #inverse of expectation of inverse of C0, data covariance matrix
-  for (i in 1:T0){
-    inv_C0[,,i] <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
-    E_C0_inv_inv[,,i] <- Rfast::Diag.matrix(D, B1[i,]/a1[1,i])
-  }
+  inv_C0 <- lapply(1:T0, function(i){Rfast::Diag.matrix(D, a1[1,i]/B1[i,])})
+  E_C0_inv_inv <- lapply(1:T0, function(i){Rfast::Diag.matrix(D, B1[i,]/a1[1,i])})
+  
   #covariance parameter of eta's
   #L2 <- sweep_3D(E_C0_inv_inv, 1/(1/k0 + RP), c(D, D, T0))
 
@@ -368,7 +364,7 @@ elbo_cs_sparse <- function(X, inverts, params){
   e30 <- matrix(0, nrow = N, ncol = T0) #for data
   e31 <- matrix(0, nrow = N, ncol = T0) #for data
   for (i in 1:T0){
-    temp <- inv_C0[,,i]
+    temp <- inv_C0[[i]]
     e200[i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
     e201[i] <- -(0.5/k0)*mat_mult_t(L1[i,,drop=FALSE], temp,
                                     L1[i,,drop=FALSE])
