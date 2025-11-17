@@ -157,7 +157,7 @@
 #' @param maxit maximum number of iterations. Default is 100
 #' @param n_inits Number of random initialisations if log_prob_matrix and other 
 #' case-specific hyperparameters are NULL. Default is 5
-#' @param parallel Logical input for parallelisation. Default is TRUE
+#' @param parallel Logical input for parallelisation. Default is FALSE
 #' @param fixed_variance covariance matrix of the data is considered known (fixed)
 #' or unknown. Default is FALSE
 #' @param covariance_type covariance matrix is considered diagonal or full.
@@ -221,7 +221,7 @@ cvi_npmm <- function(X, variational_params,
                      log_prob_matrix = NULL,
                      maxit = 100,
                      n_inits = 5,
-                     parallel = TRUE,
+                     parallel = FALSE,
                      covariance_type="full", fixed_variance=FALSE,
                      cluster_specific_covariance=TRUE,
                      variance_prior_type=c("IW", "decomposed", "sparse",

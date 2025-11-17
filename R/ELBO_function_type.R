@@ -352,9 +352,9 @@ elbo_cs_sparse <- function(X, inverts, params){
   
   #expectation of inverse of C0, data covariance matrix
   inv_C0 <- lapply(1:T0, function(i){Rfast::Diag.matrix(D, a1[1,i]/B1[i,])})
-  E_C0_inv_inv <- lapply(1:T0, function(i){Rfast::Diag.matrix(D, B1[i,]/a1[1,i])})
-  
+
   #covariance parameter of eta's
+  #E_C0_inv_inv <- lapply(1:T0, function(i){Rfast::Diag.matrix(D, B1[i,]/a1[1,i])})
   #L2 <- sweep_3D(E_C0_inv_inv, 1/(1/k0 + RP), c(D, D, T0))
 
   #the eta_i's and C0_i's
@@ -373,9 +373,9 @@ elbo_cs_sparse <- function(X, inverts, params){
     e30[,i] <- -0.5*quadratic_form_diag(X, temp)
     e31[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
   }
-  e203 <- apply(inv_C0, 3, function(x){-(0.5/k0)*mat_mult_t(Mu0, x, Mu0)})
+  e203_list <- lapply(1:T0, function(i){-(0.5/k0)*mat_mult_t(Mu0, inv_C0[[i]], Mu0)})
   e20 <- -0.5*D*T0*log(2*pi) - 0.5*D*T0*log(k0) + sum(e200) + 
-    sum(e201) - (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + sum(e203)
+    sum(e201) - (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + do.call(sum, e203_list)
 
   e210 <- rep(0, T0)
   for (i in 1:T0){
@@ -399,8 +399,10 @@ elbo_cs_sparse <- function(X, inverts, params){
     e420[i] <- sum(a1[1,i]*log(B1[i,]) - lgamma(a1[1,i]) +
                      (a1[1,i] -1)*(digamma(a1[1,i]) - log(B1[i,])) - a1[1,i])
   }
+  
+  C1D <- C1[!diag(D)]
   e4 <- -0.5*D*T0*log(2*pi + 1) + 0.5*D*sum(log(1/k0 + RP)) + sum(e410) +
-    sum(e420) + sum(-log(2*C1[!diag(D)]) - 1/(C1[!diag(D)]^2))
+    sum(e420) + sum(-log(2*C1D) - 1/(C1D^2))
 
   return(c("e_mean_cov"=e2, "e_data"=e3, "me_var"=-e4))
 }

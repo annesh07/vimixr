@@ -16,7 +16,7 @@ cvi_npmm(
   log_prob_matrix = NULL,
   maxit = 100,
   n_inits = 5,
-  parallel = TRUE,
+  parallel = FALSE,
   covariance_type = "full",
   fixed_variance = FALSE,
   cluster_specific_covariance = TRUE,
@@ -55,7 +55,7 @@ Default is NULL}
 \item{n_inits}{Number of random initialisations if log_prob_matrix and other
 case-specific hyperparameters are NULL. Default is 5}
 
-\item{parallel}{Logical input for parallelisation. Default is TRUE}
+\item{parallel}{Logical input for parallelisation. Default is FALSE}
 
 \item{covariance_type}{covariance matrix is considered diagonal or full.
 Default is 'full'}
