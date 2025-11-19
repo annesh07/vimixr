@@ -220,6 +220,15 @@ run_single <- function(config, X, N, D, T0, prior_shape_alpha, prior_rate_alpha,
     if (abs(sum(elbo_values[[m]]) - sum(elbo_values[[m + 1]])) < 0.000001 ){
       break
     }
+    
+    if (m > 3) {
+      if (abs(sum(elbo_values[[m+1]]) - sum(elbo_values[[m-2]])) < 1e-8 ||
+          abs(sum(elbo_values[[m+1]]) - sum(elbo_values[[m-1]])) < 1e-8) {
+        
+        cat("Stopping: ELBO oscillating or stuck.\n")
+        break
+      }
+    }
     message("outer loop: ", m,"\n", elbo_values[[m + 1]], '\n', sep="")
   }
   W1 <- params$post_shape_alpha
