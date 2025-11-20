@@ -157,6 +157,8 @@
 #' @param maxit maximum number of iterations. Default is 100
 #' @param n_inits Number of random initialisations if log_prob_matrix and other 
 #' case-specific hyperparameters are NULL. Default is 5
+#' @param seed Seeds for random initialisation; either a vector of n_inits 
+#' integers or NULL. Default is NULL.
 #' @param parallel Logical input for parallelisation. Default is FALSE
 #' @param fixed_variance covariance matrix of the data is considered known (fixed)
 #' or unknown. Default is FALSE
@@ -221,6 +223,7 @@ cvi_npmm <- function(X, variational_params,
                      log_prob_matrix = NULL,
                      maxit = 100,
                      n_inits = 5,
+                     seed = NULL,
                      parallel = FALSE,
                      covariance_type="full", fixed_variance=FALSE,
                      cluster_specific_covariance=TRUE,
@@ -242,16 +245,18 @@ cvi_npmm <- function(X, variational_params,
   # Unified list of inputs as configs
   configs <- vector("list", effective_n_inits)
   for (i in 1:effective_n_inits){
+    seed0 <- seed[i]
+    if (is.null(seed0)) seed0 <- sample.int(1e+10, 1, replace = FALSE)
     config_i <- list()
     if (need_random_logP) {
-      logP <- generate_log_prob(N, T0)
+      logP <- generate_log_prob(N, T0, seed0)
     } else {
       logP <- log_prob_matrix
     }
     config_i$log_prob_matrix <- logP
     if (sparse_case) {
       if (need_random_priors) {
-        cs_priors <- generate_cs_priors(T0, D)
+        cs_priors <- generate_cs_priors(T0, D, seed0)
         config_i$prior_shape_d_cs_cov <- cs_priors$prior_shape_d_cs_cov
         config_i$prior_rate_d_cs_cov <- cs_priors$prior_rate_d_cs_cov
       } else {
@@ -260,6 +265,7 @@ cvi_npmm <- function(X, variational_params,
       }
     }
     configs[[i]] <- config_i
+    seed[i] <- seed0
   }
   
   #wrapping the cvi function
@@ -340,6 +346,10 @@ cvi_npmm <- function(X, variational_params,
   # Attach to best_result
   best_result$PCA_viz <- ggplot_pca
   best_result$ELBO_viz <- ggplot_ELBO
+  
+  #Attach seeds used for reproducibility
+  best_result$Seeds <- seed
+  
   class(best_result) <- "CVIoutput" 
   return(best_result)  
 }
