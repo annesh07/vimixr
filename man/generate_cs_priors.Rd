@@ -5,14 +5,14 @@
 \title{Generate random Sparse DPMM hyperparameters for cluster-specific covariance
 matrices}
 \usage{
-generate_cs_priors(T0, D, seed)
+generate_cs_priors(T0, D, seed0)
 }
 \arguments{
 \item{T0}{variational clusters}
 
 \item{D}{dimensions of the data matrix}
 
-\item{seed}{seed for generating log Probability matrix}
+\item{seed0}{seed for generating log Probability matrix}
 }
 \description{
 Generate random Sparse DPMM hyperparameters for cluster-specific covariance

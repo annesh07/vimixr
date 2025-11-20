@@ -4,14 +4,14 @@
 \alias{generate_log_prob}
 \title{Generate random log Probability matrix if not provided}
 \usage{
-generate_log_prob(N, T0, seed)
+generate_log_prob(N, T0, seed0)
 }
 \arguments{
 \item{N}{rows of the data matrix}
 
 \item{T0}{variational clusters}
 
-\item{seed}{seed for generating log Probability matrix}
+\item{seed0}{seed for generating log Probability matrix}
 }
 \description{
 Generate random log Probability matrix if not provided

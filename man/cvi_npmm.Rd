@@ -16,7 +16,7 @@ cvi_npmm(
   log_prob_matrix = NULL,
   maxit = 100,
   n_inits = 5,
-  seed = NULL,
+  Seed = NULL,
   parallel = FALSE,
   covariance_type = "full",
   fixed_variance = FALSE,
@@ -56,7 +56,7 @@ Default is NULL}
 \item{n_inits}{Number of random initialisations if log_prob_matrix and other
 case-specific hyperparameters are NULL. Default is 5}
 
-\item{seed}{Seeds for random initialisation; either a vector of n_inits
+\item{Seed}{Seeds for random initialisation; either a vector of n_inits
 integers or NULL. Default is NULL.}
 
 \item{parallel}{Logical input for parallelisation. Default is FALSE}

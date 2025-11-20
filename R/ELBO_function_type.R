@@ -383,7 +383,8 @@ elbo_cs_sparse <- function(X, inverts, params){
                      (a0[1,i] - 1)*(digamma(a1[1,i]) - log(B1[i,])) - 
                      b0[i,]*a1[1,i]/B1[i,])
   }
-  e21 <- sum(e210) + sum(-log(2*c0) - 1/(C1[!diag(D)]*c0))
+  C1D <- C1[!diag(D)]
+  e21 <- sum(e210) + sum(-log(2*c0) - 1/(C1D*c0))
   
   e2 <- e20 + e21
 
@@ -400,7 +401,6 @@ elbo_cs_sparse <- function(X, inverts, params){
                      (a1[1,i] -1)*(digamma(a1[1,i]) - log(B1[i,])) - a1[1,i])
   }
   
-  C1D <- C1[!diag(D)]
   e4 <- -0.5*D*T0*log(2*pi + 1) + 0.5*D*sum(log(1/k0 + RP)) + sum(e410) +
     sum(e420) + sum(-log(2*C1D) - 1/(C1D^2))
 

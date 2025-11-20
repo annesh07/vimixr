@@ -157,7 +157,7 @@
 #' @param maxit maximum number of iterations. Default is 100
 #' @param n_inits Number of random initialisations if log_prob_matrix and other 
 #' case-specific hyperparameters are NULL. Default is 5
-#' @param seed Seeds for random initialisation; either a vector of n_inits 
+#' @param Seed Seeds for random initialisation; either a vector of n_inits 
 #' integers or NULL. Default is NULL.
 #' @param parallel Logical input for parallelisation. Default is FALSE
 #' @param fixed_variance covariance matrix of the data is considered known (fixed)
@@ -223,7 +223,7 @@ cvi_npmm <- function(X, variational_params,
                      log_prob_matrix = NULL,
                      maxit = 100,
                      n_inits = 5,
-                     seed = NULL,
+                     Seed = NULL,
                      parallel = FALSE,
                      covariance_type="full", fixed_variance=FALSE,
                      cluster_specific_covariance=TRUE,
@@ -242,11 +242,17 @@ cvi_npmm <- function(X, variational_params,
   need_random_priors <- sparse_case && (is.null(varargs$prior_shape_d_cs_cov) || is.null(varargs$prior_rate_d_cs_cov))
   effective_n_inits <- if (need_random_logP || need_random_priors) n_inits else 1L
   
+  #vector of seeds if random generalisation required
+  if (need_random_logP || need_random_priors){
+    if (length(Seed)==0) Seed <- sample.int(1e+7, n_inits, replace = FALSE)
+  } else {
+    Seed = "No random initialisation used"
+  }
+  
   # Unified list of inputs as configs
   configs <- vector("list", effective_n_inits)
   for (i in 1:effective_n_inits){
-    seed0 <- seed[i]
-    if (is.null(seed0)) seed0 <- sample.int(1e+10, 1, replace = FALSE)
+    seed0 <- Seed[i]
     config_i <- list()
     if (need_random_logP) {
       logP <- generate_log_prob(N, T0, seed0)
@@ -265,7 +271,6 @@ cvi_npmm <- function(X, variational_params,
       }
     }
     configs[[i]] <- config_i
-    seed[i] <- seed0
   }
   
   #wrapping the cvi function
@@ -312,6 +317,7 @@ cvi_npmm <- function(X, variational_params,
                           function(out){as.numeric(utils::tail(out$optimisation$ELBO, 1)[[1]]["e_data"])})
     best_idx <- which.max(final_elbos)
     best_result <- results[[best_idx]]
+    best_result$index <- best_idx
   } else {
     best_result <- results[[1]]
   }
@@ -348,7 +354,7 @@ cvi_npmm <- function(X, variational_params,
   best_result$ELBO_viz <- ggplot_ELBO
   
   #Attach seeds used for reproducibility
-  best_result$Seeds <- seed
+  best_result$Seed_used <- Seed
   
   class(best_result) <- "CVIoutput" 
   return(best_result)  
