@@ -295,7 +295,7 @@ elbo_cs_IW <- function(X, inverts, params){
   #expectation of log-determinant of inverse of data covariance matrix
   E_log_C0 <- matrix((E_log_C0_1 + E_log_C0_2), nrow = 1, ncol = T0)
   #covariance parameter of eta's
-  L2 <- sweep_3D(V1, 1/(nu1*(1/k0 + RP)), c(D, D, T0))
+  L2 <- sweep_3D(V1, 1/(nu1*(k0 + RP)), c(D, D, T0))
 
   #the eta_i's and C0_i's
   e20 <- rep(0, T0)
@@ -304,23 +304,23 @@ elbo_cs_IW <- function(X, inverts, params){
   e31 <- matrix(0, nrow = N, ncol = T0) #for data
   for (i in 1:T0){
     temp <- inv_C0[,,i]
-    e20[i] <- -(1/(2*k0))*mat_mult_t(L1[i,,drop=FALSE], temp,
+    e20[i] <- -(k0/2)*mat_mult_t(L1[i,,drop=FALSE], temp,
                                    L1[i,,drop=FALSE])
-    e21[i] <- (1/k0)*mat_mult_t(L1[i,,drop=FALSE], temp, Mu0)
+    e21[i] <- k0*mat_mult_t(L1[i,,drop=FALSE], temp, Mu0)
     #for data
     e30[,i] <- -0.5*quadratic_form_diag(X, temp)
     e31[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
   }
-  e22 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*mat_mult_t(Mu0,x, Mu0)})
+  e22 <- apply(inv_C0, 3, function(x){-(k0/2)*mat_mult_t(Mu0,x, Mu0)})
   e23 <- apply(inv_C0, 3, function(x){-0.5*sum(t(V0)*x)})
   e2 <- -0.5*D*T0*log(2*pi) + 0.5*(nu0 + D + 2)*sum(E_log_C0) + sum(e20) -
-    (1/(2*k0))*D*sum(1/(1/k0 + RP)) + sum(e21) + sum(e22) - 0.5*T0*nu0*D*log(2) -
+    (k0/2)*D*sum(1/(k0 + RP)) + sum(e21) + sum(e22) - 0.5*T0*nu0*D*log(2) -
     T0*(0.25*D*(D-1)*log(pi) + sum(lgamma(0.5*(nu0 + 1 - c(1:D))))) +
     0.5*T0*nu0*determinant(V0, logarithm = TRUE)$modulus + sum(e23)
 
   #the data x_n's
   e3 <- -N*0.5*D*log(2*pi) + sum(RP*0.5*E_log_C0) + sum(P*e30) + sum(P*e31) +
-    sum(RP*e20) - 0.5*D*sum(RP/(1/k0 + RP))
+    sum(RP*e20) - 0.5*D*sum(RP/(k0 + RP))
 
   #the variationa distributions
   e420 <- apply(L2, 3, function(x){-0.5*determinant(x, logarithm = TRUE)$modulus})
@@ -351,12 +351,7 @@ elbo_cs_sparse <- function(X, inverts, params){
   k0 <- params$scaling_cov_eta
   
   #expectation of inverse of C0, data covariance matrix
-  inv_C0 <- lapply(1:T0, function(i){Rfast::Diag.matrix(D, a1[1,i]/B1[i,])})
-
-  #covariance parameter of eta's
-  #E_C0_inv_inv <- lapply(1:T0, function(i){Rfast::Diag.matrix(D, B1[i,]/a1[1,i])})
-  #L2 <- sweep_3D(E_C0_inv_inv, 1/(1/k0 + RP), c(D, D, T0))
-
+  inv_C0 <- 1/(B1/c(a1))
   #the eta_i's and C0_i's
   e200 <- rep(0, T0)
   e201 <- e200
@@ -364,45 +359,50 @@ elbo_cs_sparse <- function(X, inverts, params){
   e30 <- matrix(0, nrow = N, ncol = T0) #for data
   e31 <- matrix(0, nrow = N, ncol = T0) #for data
   for (i in 1:T0){
-    temp <- inv_C0[[i]]
+    temp <- inv_C0[i,]
     e200[i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
-    e201[i] <- -(0.5/k0)*mat_mult_t(L1[i,,drop=FALSE], temp,
-                                    L1[i,,drop=FALSE])
-    e202[i] <- (1/k0)*mat_mult_t(L1[i,,drop=FALSE], temp, Mu0)
+    e201[i] <- -(0.5*k0)*sum(L1[i,,drop=FALSE]^2 * temp)
     #for data
-    e30[,i] <- -0.5*quadratic_form_diag(X, temp)
-    e31[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
+    e30[,i] <- -0.5*Rfast::rowsums(sweep(X^2, 2, temp, "*"))
+    e31[,i] <- Rfast::rowsums(sweep(X, 2, temp*L1[i,,drop=FALSE], "*"))
   }
-  e203_list <- lapply(1:T0, function(i){-(0.5/k0)*mat_mult_t(Mu0, inv_C0[[i]], Mu0)})
-  e20 <- -0.5*D*T0*log(2*pi) - 0.5*D*T0*log(k0) + sum(e200) + 
-    sum(e201) - (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + do.call(sum, e203_list)
+  e202_list <- lapply(1:T0, function(i){k0*sum(L1[i,,drop=FALSE] * Mu0 * inv_C0[i,])})
+  e203_list <- lapply(1:T0, function(i){-0.5*k0*sum(Mu0^2 * inv_C0[i,])})
+  e20 <- -0.5*D*T0*log(2*pi) + 0.5*D*T0*log(k0) + sum(e200) + k0*sum(e201) - 
+    (0.5*k0*D)/sum(k0 + RP) + do.call(sum, e202_list) + 
+    do.call(sum, e203_list)
 
   e210 <- rep(0, T0)
   for (i in 1:T0){
-    e210[i] <- sum(a0[1,i]*log(b0[i,]) - lgamma(a0[1,i]) +
-                     (a0[1,i] - 1)*(digamma(a1[1,i]) - log(B1[i,])) - 
-                     b0[i,]*a1[1,i]/B1[i,])
+    a00 <- a0[1,i]
+    b00 <- b0[i,]
+    a10 <- a1[1,i]
+    B10 <- B1[i,]
+    e210[i] <- sum(a00*log(b00) - lgamma(a00) +
+                     (a00 - 1)*(digamma(a10) - log(B10)) - 
+                     b00*a10/B10)
   }
   C1D <- C1[!diag(D)]
   e21 <- sum(e210) + sum(-log(2*c0) - 1/(C1D*c0))
   
-  e2 <- e20 + e21
+  e2 <- e20 + e21 
 
   #the data X
   e3 <- -N*0.5*D*log(2*pi) + sum(RP*e200) + sum(P*e30) + sum(P*e31) +
-    sum(RP*e201) - 0.5*D*sum(RP/(1/k0 + RP))
+    sum(RP*e201) - 0.5*D*sum(RP/(k0 + RP))
 
   #the variational distributions
   e420 <- rep(0, T0)
   e410 <- rep(0,T0)
   for (i in 1:T0){
-    e410[i] <- 0.5*sum(log(a1[1,i]/B1[i,]))
-    e420[i] <- sum(a1[1,i]*log(B1[i,]) - lgamma(a1[1,i]) +
-                     (a1[1,i] -1)*(digamma(a1[1,i]) - log(B1[i,])) - a1[1,i])
+    a10 <- a1[1,i]
+    B10 <- B1[i,]
+    e410[i] <- 0.5*sum(log(a10/B10))
+    e420[i] <- sum(a10*log(B10) - lgamma(a10) +
+                     (a10 -1)*(digamma(a10) - log(B10)) - a10)
   }
-  
-  e4 <- -0.5*D*T0*log(2*pi + 1) + 0.5*D*sum(log(1/k0 + RP)) + sum(e410) +
-    sum(e420) + sum(-log(2*C1D) - 1/(C1D^2))
+  e4 <- -0.5*D*T0*log(2*pi + 1) + 0.5*D*sum(log(k0 + RP)) + sum(e410) +
+    sum(e420) + sum(-log(2*C1D) - 1/(C1D^2)) 
 
   return(c("e_mean_cov"=e2, "e_data"=e3, "me_var"=-e4))
 }
@@ -432,7 +432,7 @@ elbo_cs_offd_normal <- function(X, inverts, params){
     E_C0_inv_inv[,,i] <- Rfast::spdinv(inv_C0[,,i])
   }
   #covariance parameter of eta's
-  #L2 <- sweep_3D(E_C0_inv_inv, 1/(1/k0 + RP), c(D, D, T0))
+  #L2 <- sweep_3D(E_C0_inv_inv, 1/(k0 + RP), c(D, D, T0))
 
   #the eta_i's and C0_i's
   e200 <- rep(0, T0)
@@ -443,16 +443,16 @@ elbo_cs_offd_normal <- function(X, inverts, params){
   for (i in 1:T0){
     temp <- inv_C0[,,i]
     e200[i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
-    e201[i] <- -(1/(2*k0))*mat_mult_t(L1[i,,drop=FALSE], temp,
+    e201[i] <- -(k0/2)*mat_mult_t(L1[i,,drop=FALSE], temp,
                                     L1[i,,drop=FALSE])
-    e202[i] <- (1/k0)*mat_mult_t(L1[i,,drop=FALSE], temp, Mu0)
+    e202[i] <- k0*mat_mult_t(L1[i,,drop=FALSE], temp, Mu0)
     #for data
     e30[,i] <- -0.5*quadratic_form_diag(X, temp)
     e31[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
   }
-  e203 <- apply(inv_C0, 3, function(x){-(1/(2*k0))*mat_mult_t(Mu0, x, Mu0)})
-  e20 <- -0.5*T0*log(2*pi) - 0.5*log(k0) + sum(e200) + sum(e201) -
-    (0.5/k0)*D/sum(1/k0 + RP) + sum(e202) + sum(e203)
+  e203 <- apply(inv_C0, 3, function(x){-(k0/2)*mat_mult_t(Mu0, x, Mu0)})
+  e20 <- -0.5*T0*log(2*pi) + 0.5*log(k0) + sum(e200) + sum(e201) -
+    (0.5*k0*D)/sum(k0 + RP) + sum(e202) + sum(e203)
 
   e210 <- rep(0, T0)
   for (i in 1:T0){
@@ -464,7 +464,7 @@ elbo_cs_offd_normal <- function(X, inverts, params){
 
   #the data X
   e3 <- -N*0.5*D*log(2*pi) + sum(RP*e200) + sum(P*e30) + sum(P*e31) +
-    sum(RP*k0*e201) - 0.5*D*sum(RP/(1/k0 + RP))
+    sum(RP*e201) - 0.5*D*sum(RP/(k0 + RP))
 
   #the variationa distributions
   e420 <- rep(0, T0)

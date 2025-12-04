@@ -420,10 +420,10 @@ CVI_update_function <- function(fixed_variance = FALSE,
           nu1 <- nu0 + matrix(RP, nrow=1)
           for (i in 1:T0){
             V10 <- t_mat_mult(X, diag(P[,i]), X)
-            V1[,,i] <- V0 + (1/k0)*matrix(Mu0, nrow = D, ncol = D,
+            V1[,,i] <- V0 + k0*matrix(Mu0, nrow = D, ncol = D,
                                           byrow = TRUE)*c(Mu0) +
               V10 + diag(1e-6, D)
-            L1[i,] <- (Mu0/k0 + Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
+            L1[i,] <- (Mu0*k0 + Rfast::eachcol.apply(X, P[,i], oper = "*"))/(k0 + RP[i])
           }
           
           V1_inv <- array(apply(V1, 3, function(x){spdinv(x)}), dim = dim(V1))
@@ -447,7 +447,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
                                          L1[i,,drop=FALSE])
           }
           P232 <- 0.5*E_log_C0
-          P_const <- -0.5*D*(log(2*pi) + 1/(1/k0 + RP))
+          P_const <- -0.5*D*(log(2*pi) + 1/(k0 + RP))
           #log probability matrix update
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233
@@ -478,20 +478,20 @@ CVI_update_function <- function(fixed_variance = FALSE,
           B1 <- params$post_rate_d_cs_cov
           C1 <- params$post_var_offd_cs_cov
           k0 <- params$scaling_cov_eta
-          
+
           RP <- Rfast::colsums(P)
-          a1 <- matrix(a0 + RP, nrow = 1, ncol = T0)
+          a1 <- matrix(a0 + RP + 1, nrow = 1, ncol = T0)
           for (i in 1:T0){
             B1[i,] <- b0[i,] + 0.5*Rfast::eachcol.apply(X^2, P[,i], oper = "*") +
-              (0.5/k0)*(Mu0^2)
+              (0.5*k0*Mu0^2)
             C01 <- 1/c0 + abs(t_mat_mult(X, diag(P[,i]), X) + 
-                                (1/k0)*mat_mult(t(Mu0), Mu0))
+                                k0*mat_mult(t(Mu0), Mu0))
             C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
-            L1[i,] <- (Mu0/k0 +
-                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
+            L1[i,] <- (Mu0*k0 +
+                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(k0 + RP[i])
           }
           #expectation of inverse of C0, data covariance matrix
-          inv_C0 <- array(0, c(D, D, T0))
+          inv_C0 <- 1/(B1/c(a1))
 
           #updating the latent probability values
           P230 <- matrix(0, nrow = N, ncol = T0)
@@ -499,14 +499,13 @@ CVI_update_function <- function(fixed_variance = FALSE,
           P231 <- matrix(0, nrow = 1, ncol = T0)
           P232 <- matrix(0, nrow = 1, ncol = T0)
           for (i in 1:T0){
-            inv_C0[,,i] <- temp <- Rfast::Diag.matrix(D, a1[1,i]/B1[i,])
-            P233[,i] <- -0.5*quadratic_form_diag(X, temp)
-            P230[,i] <- mat_mult_t(L1[i,,drop=FALSE], temp, X)
-            P231[1,i] <- -0.5*mat_mult_t(L1[i,,drop=FALSE], temp,
-                                              L1[i,,drop=FALSE])
+            temp <- inv_C0[i,]
+            P233[,i] <- -0.5*Rfast::rowsums(sweep(X^2, 2, temp, "*"))
+            P230[,i] <- Rfast::rowsums(sweep(X, 2, temp*L1[i,,drop=FALSE], "*"))
+            P231[1,i] <- -0.5*sum(L1[i,,drop=FALSE]^2 * temp)
             P232[1,i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
           }
-          P_const <- -0.5*D*(1/(1/k0 + RP))
+          P_const <- -0.5*D*(1/(k0 + RP))
           #log probability matrix update
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233
@@ -551,8 +550,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
             B1[i,] <- b0 + Rfast::eachcol.apply(X^2, P[,i], oper = "*")
             C01 <- -0.5*c0*t_mat_mult(X, diag(P[,i]), X)
             C1[,,i] <- Rfast::Diag.fill(C01, rep(0, D))
-            L1[i,] <- (Mu0/k0 +
-                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(1/k0 + RP[i])
+            L1[i,] <- (Mu0*k0 +
+                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(k0 + RP[i])
           }
           
           #expectation of inverse of data covariance matrix
@@ -571,7 +570,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
                                          L1[i,,drop=FALSE])
             P232[1,i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
           }
-          P_const <- -0.5*D*(log(2*pi) + 1/(1/k0 + RP))
+          P_const <- -0.5*D*(log(2*pi) + 1/(k0 + RP))
           #log probability matrix update
           Plog <- P2 + P230 + matrix((P_const + P231 + P232), nrow = N, ncol = T0,
                                      byrow = TRUE) + P233

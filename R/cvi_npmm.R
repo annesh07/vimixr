@@ -336,7 +336,7 @@ cvi_npmm <- function(X, variational_params,
   pca_df <- data.frame("PC1" = pca$x[,1], "PC2" = pca$x[,2], "Cluster" = as.factor(clustering))
   ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2, color = .data$Cluster, shape = .data$Cluster)) +
     ggplot2::geom_point(size = 3, alpha = 0.8) +
-    ggplot2::labs(title = "PCA projection of clustered data", 
+    ggplot2::labs(title = "PCA projection of SparseDPMM clusters", 
                   x = paste0("PC 1 (", pc1_pct, "%)"), 
                   y = paste0("PC 2 (", pc2_pct, "%)")) +
     ggplot2::theme_minimal()
