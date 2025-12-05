@@ -250,6 +250,7 @@ cvi_npmm <- function(X, variational_params,
   }
   
   # Unified list of inputs as configs
+  empBayes_values <- rep(0, effective_n_inits)
   configs <- vector("list", effective_n_inits)
   for (i in 1:effective_n_inits){
     seed0 <- Seed[i]
@@ -260,16 +261,16 @@ cvi_npmm <- function(X, variational_params,
       logP <- log_prob_matrix
     }
     config_i$log_prob_matrix <- logP
-    if (sparse_case) {
-      if (need_random_priors) {
-        cs_priors <- generate_cs_priors(T0, D, seed0)
-        config_i$prior_shape_d_cs_cov <- cs_priors$prior_shape_d_cs_cov
-        config_i$prior_rate_d_cs_cov <- cs_priors$prior_rate_d_cs_cov
-      } else {
-        config_i$prior_shape_d_cs_cov <- varargs$prior_shape_d_cs_cov
-        config_i$prior_rate_d_cs_cov <- varargs$prior_rate_d_cs_cov
-      }
+    if (need_random_priors) {
+      cs_priors <- eBa0(logP, X)
+      empBayes_values[i] <- cs_priors
+      config_i$prior_shape_d_cs_cov <- matrix(cs_priors, 1, T0)
+      config_i$prior_rate_d_cs_cov <- matrix(cs_priors, T0, D)
+    } else {
+      config_i$prior_shape_d_cs_cov <- varargs$prior_shape_d_cs_cov
+      config_i$prior_rate_d_cs_cov <- varargs$prior_rate_d_cs_cov
     }
+    
     configs[[i]] <- config_i
   }
   
@@ -355,6 +356,11 @@ cvi_npmm <- function(X, variational_params,
   
   #Attach seeds used for reproducibility
   best_result$Seed_used <- Seed
+  
+  #Attach the empirical Bayes based output for a0 hyper-parameter of Sparse DPMM
+  if (need_random_priors) {
+    best_result$Empirical_Bayes_estimates <- empBayes_values
+  }
   
   class(best_result) <- "CVIoutput" 
   return(best_result)  

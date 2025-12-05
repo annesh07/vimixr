@@ -21,6 +21,26 @@ cum_clustprop_var <- function(P1) {
     .Call(`_vimixr_cum_clustprop_var`, P1)
 }
 
+#' Initialize matrices for eBayes
+#' 
+#' @param Rk vector
+#' @param PSk matrix
+#' @param Sk matrix
+#' @rdname eBayes
+#' @export
+eBayes_init <- function(Rk, PSk, Sk) {
+    invisible(.Call(`_vimixr_eBayes_init`, Rk, PSk, Sk))
+}
+
+#' Compute eBayes for a_vec using global matrices
+#'
+#' @param a_vec vector
+#' @return vector of results
+#' @export
+eBayes_run <- function(a_vec) {
+    .Call(`_vimixr_eBayes_run`, a_vec)
+}
+
 #' mat_mult
 #'
 #' Calculate matrix multiplication
