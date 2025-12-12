@@ -16,7 +16,7 @@ knitr::opts_chunk$set(
 # vimixr
 
 <!-- badges: start -->
-  [![R-CMD-check](https://github.com/annesh07/CVI/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/annesh07/CVI/actions/workflows/R-CMD-check.yaml)
+  [![R-CMD-check](https://github.com/annesh07/vimixr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/annesh07/vimixr/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of **vimixr** is to perform collapsed Variational Inference for DPMM using adaptive inference on the DP concentration parameter as well as covariance hyper-parameter of DP base distribution.
@@ -28,7 +28,7 @@ You can install the development version of **vimixr** from [GitHub](https://gith
 
 ```{r eval=FALSE}
 # install.packages("devtools")
-devtools::install_github("annesh07/CVI")
+devtools::install_github("annesh07/vimixr")
 ```
 
 ## Example

@@ -5,7 +5,7 @@
 
 <!-- badges: start -->
 
-[![R-CMD-check](https://github.com/annesh07/CVI/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/annesh07/CVI/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/annesh07/vimixr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/annesh07/vimixr/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 The goal of **vimixr** is to perform collapsed Variational Inference for
@@ -19,7 +19,7 @@ You can install the development version of **vimixr** from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("annesh07/CVI")
+devtools::install_github("annesh07/vimixr")
 ```
 
 ## Example
@@ -53,11 +53,12 @@ cluster-inspecific fixed diagonal covariance for the data.
           post_precision_scalar_eta = matrix(0.001, 20, 1),
           cov_data = diag(ncol(X)))
   summary(res)
-#>              Length Class  Mode
-#> posterior     5     -none- list
-#> optimisation  2     -none- list
-#> PCA_viz      11     gg     list
-#> ELBO_viz     11     gg     list
+#>              Length Class           Mode     
+#> posterior    5      -none-          list     
+#> optimisation 3      -none-          list     
+#> PCA_viz      1      ggplot2::ggplot S4       
+#> ELBO_viz     1      ggplot2::ggplot S4       
+#> Seed_used    1      -none-          character
   plot(res)
 ```
 
