@@ -46,9 +46,9 @@ eBa0 <- function(logP, X,
   dfvals_vec <- df_vec(a_grid) 
   
   #vectorized root search
-  root_search <- Vectorize(function(i) {
+  root_search <- function(i) {
     stats::uniroot(df_vec, interval = c(a_grid[i], a_grid[i + 1]))$root
-  }) 
+  }
   
   #Detect sign change in df
   idx <- which(dfvals_vec[-length(dfvals_vec)] * dfvals_vec[-1] < 0)
