@@ -36,7 +36,7 @@ eBa0 <- function(logP, X,
     n0 <- length(r_vec)
     f_list <- lapply(1:n0, function(i){D*Rk*digamma(r_vec[i] + Rk) -
         Rk*log(r_vec[i] + 0.5*Sk) - (Sk*(r_vec[i] + Rk))/(r_vec[i]+0.5*Sk) -
-        D*Rk/(N+1+RK)})
+        D*Rk/(N+1+Rk)})
     val0 <- -0.5*D*N*T0*log(2*pi) + 0.5*sapply(f_list, sum)
     return(val0)
   }
@@ -66,7 +66,7 @@ eBa0 <- function(logP, X,
       root <- N #default a0
     } else {root <- a_grid[idx0]} 
   } else {
-    roots <- root_finder(idx)
+    roots <- root_search(idx)
     root <- roots[which.max(vll(roots))]
   }
   

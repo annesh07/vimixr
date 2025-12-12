@@ -33,29 +33,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// eBayes_init
-void eBayes_init(const Eigen::VectorXd& Rk, const Eigen::MatrixXd& PSk, const Eigen::MatrixXd& Sk);
-RcppExport SEXP _vimixr_eBayes_init(SEXP RkSEXP, SEXP PSkSEXP, SEXP SkSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type Rk(RkSEXP);
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type PSk(PSkSEXP);
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type Sk(SkSEXP);
-    eBayes_init(Rk, PSk, Sk);
-    return R_NilValue;
-END_RCPP
-}
-// eBayes_run
-Eigen::VectorXd eBayes_run(const Eigen::VectorXd& a_vec);
-RcppExport SEXP _vimixr_eBayes_run(SEXP a_vecSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::VectorXd& >::type a_vec(a_vecSEXP);
-    rcpp_result_gen = Rcpp::wrap(eBayes_run(a_vec));
-    return rcpp_result_gen;
-END_RCPP
-}
 // mat_mult
 Eigen::MatrixXd mat_mult(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
 RcppExport SEXP _vimixr_mat_mult(SEXP ASEXP, SEXP BSEXP) {
@@ -124,8 +101,6 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_vimixr_cum_clustprop", (DL_FUNC) &_vimixr_cum_clustprop, 1},
     {"_vimixr_cum_clustprop_var", (DL_FUNC) &_vimixr_cum_clustprop_var, 1},
-    {"_vimixr_eBayes_init", (DL_FUNC) &_vimixr_eBayes_init, 3},
-    {"_vimixr_eBayes_run", (DL_FUNC) &_vimixr_eBayes_run, 1},
     {"_vimixr_mat_mult", (DL_FUNC) &_vimixr_mat_mult, 2},
     {"_vimixr_mat_mult_t", (DL_FUNC) &_vimixr_mat_mult_t, 3},
     {"_vimixr_quadratic_form_diag", (DL_FUNC) &_vimixr_quadratic_form_diag, 2},
