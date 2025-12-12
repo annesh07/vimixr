@@ -19,7 +19,8 @@ Imports:
     RcppEigen,
     Rfast,
     rlang,
-    parallel
+    parallel,
+    stats
 Suggests: 
     knitr,
     rmarkdown,
