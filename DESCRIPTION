@@ -16,7 +16,6 @@ Imports:
     ggplot2,
     patchwork,
     Rcpp,
-    RcppEigen,
     Rfast,
     rlang,
     parallel,
