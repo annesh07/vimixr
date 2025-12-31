@@ -23,6 +23,9 @@ eBa0(
 
 \item{grid_points}{number of points for grid search}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 Root for a0 hyper-parameter for Sparse DPMM
 }

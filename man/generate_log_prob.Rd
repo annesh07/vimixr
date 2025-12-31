@@ -13,6 +13,9 @@ generate_log_prob(N, T0, seed0)
 
 \item{seed0}{seed for generating log Probability matrix}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 Generate random log Probability matrix if not provided
 }

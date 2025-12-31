@@ -13,6 +13,9 @@ elbo_fixed_diagonal(X, inverts, params)
 
 \item{params}{a list of required arguments}
 }
+\value{
+No return value, called for side effects.
+}
 \description{
 ELBO calculating functions depending on type of model for covariance matrix
 }

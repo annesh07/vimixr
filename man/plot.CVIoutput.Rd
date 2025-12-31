@@ -11,6 +11,9 @@
 
 \item{...}{additional arguments}
 }
+\value{
+A ggplot object representing visualisation
+}
 \description{
 S3 plotting function for \code{CVIoutput}objects'
 }
