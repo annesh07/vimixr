@@ -5,7 +5,9 @@
 #' @param a_min minimum value of a0 for grid search
 #' @param a_max maximum value of a0 for grid search
 #' @param grid_points number of points for grid search
-#'
+#' 
+#' @return No return value, called for side effects.
+#' 
 #' @importFrom stats uniroot
 #' 
 #' @export

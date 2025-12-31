@@ -3,7 +3,9 @@
 #' @param X the data matrix
 #' @param inverts a list of inverses
 #' @param params a list of required arguments
-#'
+#' 
+#' @return No return value, called for side effects.
+#' 
 #' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
 #' Diag.matrix
 #'

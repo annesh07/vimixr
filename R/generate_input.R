@@ -4,6 +4,8 @@
 #' @param T0 variational clusters
 #' @param seed0 seed for generating log Probability matrix
 #' 
+#' @return No return value, called for side effects.
+#' 
 #' @importFrom stats rgamma
 #' 
 #' @export
