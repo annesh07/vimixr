@@ -1,13 +1,13 @@
 Package: vimixr
 Title: Collapsed Variational Inference for Dirichlet Process (DP) Mixture Model
-Version: 0.1.1
+Version: 0.1.2
 Authors@R: c( 
     person("Annesh", "Pal", , "sistm.soft.maintain@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0003-2146-180X")),
     person("Boris", "Hejblum", , "boris.hejblum@u-bordeaux.fr", role = c("aut"),
            comment = c(ORCID = "0000-0003-0646-452X"))
            )
-Description: This package performs a novel collapsed Variational Inference for a Dirichlet Process (DP) mixture model with unknown covariance matrix structure and DP concentration parameter. It enables efficient clustering of high-dimensional data with significantly improved computational speed than traditional MCMC methods. The package incorporates 8 parametrisations and corresponding prior choices for the unknown covariance matrix, from which the user can choose and apply accordingly.
+Description: Collapsed Variational Inference for a Dirichlet Process (DP) mixture model with unknown covariance matrix structure and DP concentration parameter. It enables efficient clustering of high-dimensional data with significantly improved computational speed than traditional MCMC methods. The package incorporates 8 parameterisations and corresponding prior choices for the unknown covariance matrix, from which the user can choose and apply accordingly.
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3

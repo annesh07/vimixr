@@ -1,4 +1,9 @@
 ## Resubmission
+This is a resubmission in response to the previous feedbacks. We have made the following changes:
+* Started the Description field with "Collapsed" rather than the name of the package or "This package"
+* Corrected the spelling of "parametrisation" to "parameterisation". The word "Variational" might not exist in standard English dictionary, but it is meaningful and correct in terms statistics and Bayesian computation
+
+## Resubmission
 
 This is a resubmission. In response to the previous feedback, we have made the following changes:
 
