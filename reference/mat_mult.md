@@ -1,23 +1,31 @@
 # mat_mult
 
-Calculate matrix multiplication
+Calculate matrix multiplication with optional transposition.
 
 ## Usage
 
 ``` r
-mat_mult(A, B)
+mat_mult(A, B, transpose_A = FALSE, transpose_B = FALSE)
 ```
 
 ## Arguments
 
 - A:
 
-  matrix
+  matrix or vector
 
 - B:
 
-  matrix
+  matrix or vector
+
+- transpose_A:
+
+  transpose A before multiplying
+
+- transpose_B:
+
+  transpose B before multiplying
 
 ## Value
 
-A %\*% B
+A %\*% B (or variant), as vector if either input was a vector

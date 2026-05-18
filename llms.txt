@@ -10,6 +10,7 @@ You can install the development version of **vimixr** from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("annesh07/vimixr")
 ```
@@ -17,6 +18,7 @@ devtools::install_github("annesh07/vimixr")
 ## Example
 
 ``` r
+
 library(vimixr)
 ```
 
@@ -24,6 +26,7 @@ Let’s generate some toy data. Here the data contains N = 100 samples, D
 = 2 dimensions and K = 2 clusters.
 
 ``` r
+
 X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
             matrix(rnorm(100, m=3, sd=0.5), ncol=2))
 ```
@@ -33,6 +36,7 @@ In order to obtain the clusters present in **X**, we apply function from
 cluster-inspecific fixed diagonal covariance for the data.
 
 ``` r
+
   # Fixed-diagonal variance
   res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
@@ -85,6 +89,10 @@ cluster-inspecific fixed diagonal covariance for the data.
 
 - [`generate_log_prob()`](https://annesh07.github.io/vimixr/reference/generate_log_prob.md)
   : Generate random log Probability matrix if not provided
+
+- [`log_sum_exp()`](https://annesh07.github.io/vimixr/reference/log_sum_exp.md)
+  : Log-sum-exponential computation on the log probability allocation
+  matrix
 
 - [`mat_mult()`](https://annesh07.github.io/vimixr/reference/mat_mult.md)
   : mat_mult

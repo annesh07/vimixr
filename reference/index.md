@@ -28,6 +28,10 @@
 - [`generate_log_prob()`](https://annesh07.github.io/vimixr/reference/generate_log_prob.md)
   : Generate random log Probability matrix if not provided
 
+- [`log_sum_exp()`](https://annesh07.github.io/vimixr/reference/log_sum_exp.md)
+  : Log-sum-exponential computation on the log probability allocation
+  matrix
+
 - [`mat_mult()`](https://annesh07.github.io/vimixr/reference/mat_mult.md)
   : mat_mult
 

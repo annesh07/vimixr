@@ -10,6 +10,7 @@ You can install the development version of **vimixr** from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("annesh07/vimixr")
 ```
@@ -17,6 +18,7 @@ devtools::install_github("annesh07/vimixr")
 ## Example
 
 ``` r
+
 library(vimixr)
 ```
 
@@ -24,6 +26,7 @@ Let’s generate some toy data. Here the data contains N = 100 samples, D
 = 2 dimensions and K = 2 clusters.
 
 ``` r
+
 X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
             matrix(rnorm(100, m=3, sd=0.5), ncol=2))
 ```
@@ -33,6 +36,7 @@ In order to obtain the clusters present in **X**, we apply function from
 cluster-inspecific fixed diagonal covariance for the data.
 
 ``` r
+
   # Fixed-diagonal variance
   res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,

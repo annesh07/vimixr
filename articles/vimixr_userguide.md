@@ -1,6 +1,7 @@
 # Userguide for the \`vimixr\` package
 
 ``` r
+
 library(vimixr)
 ```
 
@@ -8,6 +9,7 @@ Let’s generate some toy data. Here the data contains N = 100 samples, D
 = 2 dimensions and K = 2 clusters.
 
 ``` r
+
 X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
             matrix(rnorm(100, m=3, sd=0.5), ncol=2))
 ```
@@ -15,6 +17,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 ## Fixed-diagonal variance
 
 ``` r
+
   res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
@@ -40,6 +43,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 ## Varied diagonal variance
 
 ``` r
+
  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
             prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
             post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
@@ -70,6 +74,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 ## Fixed-full Variance
 
 ``` r
+
   res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
@@ -97,6 +102,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 \#Full Variance IW distribution
 
 ``` r
+
  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
           prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
           post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
@@ -127,6 +133,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 ## Full Variance with Cholesky decomposition
 
 ``` r
+
   res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
@@ -161,6 +168,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 ## Cluster-specific diagonal with IW distribution
 
 ``` r
+
  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
@@ -190,6 +198,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 ## Cluster-specific sparse Variance
 
 ``` r
+
  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
@@ -221,6 +230,7 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 ## Cluster-specific variance with off-diagonal normal priors
 
 ``` r
+
  res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
            prior_rate_alpha = 0.001, post_shape_alpha = 0.001,
            post_rate_alpha = 0.001, prior_mean_eta = matrix(0, 1, ncol(X)),
