@@ -188,6 +188,7 @@
 #' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill  Diag.matrix
 #' @importFrom ggplot2 ggplot aes geom_point geom_line labs theme_minimal
 #' @importFrom rlang .data
+#' @importFrom stats prcomp
 #' @importFrom irlba prcomp_irlba
 #' @importFrom parallel detectCores makeCluster stopCluster clusterExport
 #' @importFrom utils tail
@@ -326,9 +327,13 @@ cvi_npmm <- function(X, variational_params,
   clustering <- apply(posterior[["log Probability matrix"]], 1, which.max)
   
   # PCA plot
-  pca <- irlba::prcomp_irlba(X,2)
-  #variation explained
-  var_explained <- pca$sdev^2 / pca$totalvar
+  if (ncol(X)==2){
+    pca <- stats::prcomp(X)
+    var_explained <- pca$sdev^2 / sum(pca$sdev^2)
+  } else {
+    pca <- irlba::prcomp_irlba(X,2)
+    var_explained <- pca$sdev^2 / pca$totalvar
+  }
   pc1_pct <- round(var_explained[1] * 100, 2)
   pc2_pct <- round(var_explained[2] * 100, 2)
   #the plot
