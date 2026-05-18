@@ -11,6 +11,9 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 Eigen::MatrixXd t_mat_mult(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B, const Eigen::MatrixXd& C) {
-  return (A.transpose() * B) * C;  // Equivalent to (t(A) %*% B) %*% t(C)
+  // return A.transpose() * (B * C);  // Equivalent to (t(A) %*% B) %*% t(C)
+  Eigen::MatrixXd result(A.cols(), C.cols());
+  result.noalias() = (A.transpose() * B) * C;
+  return result;
 }
 

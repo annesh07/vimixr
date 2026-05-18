@@ -34,14 +34,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // mat_mult
-Eigen::MatrixXd mat_mult(const Eigen::MatrixXd& A, const Eigen::MatrixXd& B);
-RcppExport SEXP _vimixr_mat_mult(SEXP ASEXP, SEXP BSEXP) {
+SEXP mat_mult(SEXP A, SEXP B, bool transpose_A, bool transpose_B);
+RcppExport SEXP _vimixr_mat_mult(SEXP ASEXP, SEXP BSEXP, SEXP transpose_ASEXP, SEXP transpose_BSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type A(ASEXP);
-    Rcpp::traits::input_parameter< const Eigen::MatrixXd& >::type B(BSEXP);
-    rcpp_result_gen = Rcpp::wrap(mat_mult(A, B));
+    Rcpp::traits::input_parameter< SEXP >::type A(ASEXP);
+    Rcpp::traits::input_parameter< SEXP >::type B(BSEXP);
+    Rcpp::traits::input_parameter< bool >::type transpose_A(transpose_ASEXP);
+    Rcpp::traits::input_parameter< bool >::type transpose_B(transpose_BSEXP);
+    rcpp_result_gen = Rcpp::wrap(mat_mult(A, B, transpose_A, transpose_B));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -101,7 +103,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_vimixr_cum_clustprop", (DL_FUNC) &_vimixr_cum_clustprop, 1},
     {"_vimixr_cum_clustprop_var", (DL_FUNC) &_vimixr_cum_clustprop_var, 1},
-    {"_vimixr_mat_mult", (DL_FUNC) &_vimixr_mat_mult, 2},
+    {"_vimixr_mat_mult", (DL_FUNC) &_vimixr_mat_mult, 4},
     {"_vimixr_mat_mult_t", (DL_FUNC) &_vimixr_mat_mult_t, 3},
     {"_vimixr_quadratic_form_diag", (DL_FUNC) &_vimixr_quadratic_form_diag, 2},
     {"_vimixr_sweep_3D", (DL_FUNC) &_vimixr_sweep_3D, 4},

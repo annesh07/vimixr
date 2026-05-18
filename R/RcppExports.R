@@ -23,13 +23,15 @@ cum_clustprop_var <- function(P1) {
 
 #' mat_mult
 #'
-#' Calculate matrix multiplication
-#' @param A matrix
-#' @param B matrix
-#' @return A %*% B
+#' Calculate matrix multiplication with optional transposition.
+#' @param A matrix or vector
+#' @param B matrix or vector
+#' @param transpose_A transpose A before multiplying
+#' @param transpose_B transpose B before multiplying
+#' @return A %*% B (or variant), as vector if either input was a vector
 #' @export
-mat_mult <- function(A, B) {
-    .Call(`_vimixr_mat_mult`, A, B)
+mat_mult <- function(A, B, transpose_A = FALSE, transpose_B = FALSE) {
+    .Call(`_vimixr_mat_mult`, A, B, transpose_A, transpose_B)
 }
 
 #' mat_mult_t

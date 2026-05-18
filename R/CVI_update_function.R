@@ -17,8 +17,7 @@
 #'
 #' @return Updated parameters
 #'
-#' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
-#' Diag.matrix
+#' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill Diag.matrix Crossprod
 #'
 #' @export
 #'
@@ -43,17 +42,23 @@ CVI_update_function <- function(fixed_variance = FALSE,
   RP <- Rfast::colsums(P)
   #probability matrix update based on latent allocations
   P2 <- matrix(0, N, T0)
+  full_eni <- Rfast::colsums(P)              
+  full_vni <- Rfast::colsums(P * (1 - P))   
+  full_enj <- cum_clustprop(P)              
+  full_vnj <- cum_clustprop_var(P)          
+  row_T <- Rfast::rowsums(P)             
+  row_S <- t(apply(P, 1, cumsum))
   for (n in 1:N){
     #update of the n^th vector is done by considering all the vecors except
     #the n^th one
-    P1 <- P[-n,]
-
-    p_eni <- Rfast::colsums(P1) #cluster proportions
-    p_vni <- Rfast::colsums(P1*(1-P1)) #cluster proportion variance
-    p_enj <- cum_clustprop(P1) #cummulative cluster proportion
-    p_vnj <- cum_clustprop_var(P1) #cummulative cluster proportion variance
-
-
+    sn <- row_S[n, ]                    
+    tn <- row_T[n]                      
+    pn <- P[n, ]                       
+    
+    p_eni <- full_eni - pn
+    p_vni <- full_vni - pn * (1 - pn)
+    p_enj <- full_enj - (tn - sn)
+    p_vnj <- full_vnj - sn * (tn - sn)
 
     P20 <- log(1 + p_eni) - p_vni/((1 + p_eni)^2) - log(1 + p_eni + p_enj +
                                                           (W1/W2)) +
@@ -481,14 +486,17 @@ CVI_update_function <- function(fixed_variance = FALSE,
 
           RP <- Rfast::colsums(P)
           a1 <- matrix(a0 + RP + 1, nrow = 1, ncol = T0)
+          idx <- 1 + 0:(D-1) * (D+1)
+          L1_constant <- mat_mult(X, P, transpose_A = TRUE)
+          C01_constant <- k0*mat_mult(Mu0, Mu0, transpose_A = TRUE)
+          B1_constant <- mat_mult(X^2, P, transpose_A = TRUE)
           for (i in 1:T0){
-            B1[i,] <- b0[i,] + 0.5*Rfast::eachcol.apply(X^2, P[,i], oper = "*") +
-              (0.5*k0*Mu0^2)
-            C01 <- 1/c0 + abs(t_mat_mult(X, diag(P[,i]), X) + 
-                                k0*mat_mult(t(Mu0), Mu0))
-            C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
-            L1[i,] <- (Mu0*k0 +
-                         Rfast::eachcol.apply(X, P[,i], oper = "*"))/(k0 + RP[i])
+            B1[i,] <- b0[i,] + 0.5*B1_constant[,i] + (0.5*k0*Mu0^2)
+            C01 <- 1/(1/c0 + abs(mat_mult(X, X*P[,i], transpose_A = TRUE) + C01_constant))
+            C01[idx] <- 0
+            #C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
+            C1[,,i] <- C01
+            L1[i,] <- (Mu0*k0 + L1_constant[,i])/(k0 + RP[i])
           }
           #expectation of inverse of C0, data covariance matrix
           inv_C0 <- 1/(B1/c(a1))
@@ -500,8 +508,8 @@ CVI_update_function <- function(fixed_variance = FALSE,
           P232 <- matrix(0, nrow = 1, ncol = T0)
           for (i in 1:T0){
             temp <- inv_C0[i,]
-            P233[,i] <- -0.5*Rfast::rowsums(sweep(X^2, 2, temp, "*"))
-            P230[,i] <- Rfast::rowsums(sweep(X, 2, temp*L1[i,,drop=FALSE], "*"))
+            P233[,i] <- -0.5*mat_mult(X^2, temp)
+            P230[,i] <- mat_mult(X, (temp*L1[i,]))
             P231[1,i] <- -0.5*sum(L1[i,,drop=FALSE]^2 * temp)
             P232[1,i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
           }
@@ -511,10 +519,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
                                      byrow = TRUE) + P233
 
           #log-sum-exp trick
-          Plog <- t(apply(Plog, 1, function(x){
-            mx <- max(x)
-            x - mx - log(sum(exp(x - mx)))
-          }))
+          Plog <- log_sum_exp(Plog)
           P <- exp(Plog)
           RP <- Rfast::colsums(P)
           ord <- order(RP, decreasing = TRUE)

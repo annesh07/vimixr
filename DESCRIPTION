@@ -10,7 +10,6 @@ Authors@R: c(
 Description: Collapsed Variational Inference for a Dirichlet Process (DP) mixture model with unknown covariance matrix structure and DP concentration parameter. It enables efficient clustering of high-dimensional data with significantly improved computational speed than traditional MCMC methods. The package incorporates 8 parameterisations and corresponding prior choices for the unknown covariance matrix, from which the user can choose and apply accordingly.
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 License: MIT + file LICENSE
 Imports:
     ggplot2,
@@ -19,7 +18,8 @@ Imports:
     Rfast,
     rlang,
     parallel,
-    stats
+    stats,
+    irlba
 Suggests: 
     knitr,
     rmarkdown,
@@ -32,3 +32,4 @@ LinkingTo:
     Rcpp,
     RcppEigen
 VignetteBuilder: knitr
+Config/roxygen2/version: 8.0.0

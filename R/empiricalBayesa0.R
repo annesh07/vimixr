@@ -68,7 +68,7 @@ eBa0 <- function(logP, X,
       root <- N #default a0
     } else {root <- a_grid[idx0]} 
   } else {
-    roots <- root_search(idx)
+    roots <- vapply(idx, root_search, numeric(1))
     root <- roots[which.max(vll(roots))]
   }
   

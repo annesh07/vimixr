@@ -4,16 +4,20 @@
 \alias{mat_mult}
 \title{mat_mult}
 \usage{
-mat_mult(A, B)
+mat_mult(A, B, transpose_A = FALSE, transpose_B = FALSE)
 }
 \arguments{
-\item{A}{matrix}
+\item{A}{matrix or vector}
 
-\item{B}{matrix}
+\item{B}{matrix or vector}
+
+\item{transpose_A}{transpose A before multiplying}
+
+\item{transpose_B}{transpose B before multiplying}
 }
 \value{
-A \%*\% B
+A \%*\% B (or variant), as vector if either input was a vector
 }
 \description{
-Calculate matrix multiplication
+Calculate matrix multiplication with optional transposition.
 }

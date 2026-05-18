@@ -6,8 +6,7 @@
 #' 
 #' @return No return value, called for side effects.
 #' 
-#' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill
-#' Diag.matrix
+#' @importFrom Rfast rowsums colsums spdinv eachrow eachcol.apply Diag.fill Diag.matrix
 #'
 #' @export
 #'
@@ -356,17 +355,12 @@ elbo_cs_sparse <- function(X, inverts, params){
   inv_C0 <- 1/(B1/c(a1))
   #the eta_i's and C0_i's
   e200 <- rep(0, T0)
-  e201 <- e200
-  e202 <- e200
-  e30 <- matrix(0, nrow = N, ncol = T0) #for data
-  e31 <- matrix(0, nrow = N, ncol = T0) #for data
+  e201 <- -(0.5*k0)*Rfast::rowsums(L1^2 * inv_C0)
+  #for data
+  e30 <- -0.5*mat_mult(X^2, inv_C0, transpose_B = TRUE)
+  e31 <- mat_mult(X, (inv_C0*L1), transpose_B = TRUE)
   for (i in 1:T0){
-    temp <- inv_C0[i,]
     e200[i] <- 0.5*sum(digamma(a1[1,i]) - log(B1[i,]))
-    e201[i] <- -(0.5*k0)*sum(L1[i,,drop=FALSE]^2 * temp)
-    #for data
-    e30[,i] <- -0.5*Rfast::rowsums(sweep(X^2, 2, temp, "*"))
-    e31[,i] <- Rfast::rowsums(sweep(X, 2, temp*L1[i,,drop=FALSE], "*"))
   }
   e202_list <- lapply(1:T0, function(i){k0*sum(L1[i,,drop=FALSE] * Mu0 * inv_C0[i,])})
   e203_list <- lapply(1:T0, function(i){-0.5*k0*sum(Mu0^2 * inv_C0[i,])})
@@ -385,7 +379,8 @@ elbo_cs_sparse <- function(X, inverts, params){
                      b00*a10/B10)
   }
   C1D <- C1[!diag(D)]
-  e21 <- sum(e210) + sum(-log(2*c0) - 1/(C1D*c0))
+  C1D_inv <- 1/C1D
+  e21 <- sum(e210) - log(2*c0) - sum(C1D_inv/c0)
   
   e2 <- e20 + e21 
 
@@ -394,17 +389,13 @@ elbo_cs_sparse <- function(X, inverts, params){
     sum(RP*e201) - 0.5*D*sum(RP/(k0 + RP))
 
   #the variational distributions
-  e420 <- rep(0, T0)
-  e410 <- rep(0,T0)
-  for (i in 1:T0){
-    a10 <- a1[1,i]
-    B10 <- B1[i,]
-    e410[i] <- 0.5*sum(log(a10/B10))
-    e420[i] <- sum(a10*log(B10) - lgamma(a10) +
-                     (a10 -1)*(digamma(a10) - log(B10)) - a10)
-  }
-  e4 <- -0.5*D*T0*log(2*pi + 1) + 0.5*D*sum(log(k0 + RP)) + sum(e410) +
-    sum(e420) + sum(-log(2*C1D) - 1/(C1D^2)) 
+  a10 <- a1[1, ]
+  B10   <- Rfast::rowsums(log(B1))
+  e410 <- 0.5 * (D * log(a10) - B10)   
+  e420 <- a10*B10 - D*lgamma(a10) + (a10 - 1)*(D*digamma(a10) - B10) - D*a10   
+  
+  e4 <- -0.5*D*T0*log(2*pi + 1) + 0.5*D*sum(log(k0 + RP)) +
+    sum(e410) + sum(e420) + sum(-log(2*C1D) - (C1D_inv^2))
 
   return(c("e_mean_cov"=e2, "e_data"=e3, "me_var"=-e4))
 }

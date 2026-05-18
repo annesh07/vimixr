@@ -200,7 +200,7 @@ run_single <- function(config, X, N, D, T0, prior_shape_alpha, prior_rate_alpha,
   }
   
   #store the output of ELBO function for every iteration of updates
-  elbo_values <- list()
+  elbo_values <- vector("list", maxit + 1)
   elbo_values[[1]] <- ELBO_function(fixed_variance, covariance_type,
                                     cluster_specific_covariance,
                                     variance_prior_type, X, inverts, params)
@@ -231,6 +231,7 @@ run_single <- function(config, X, N, D, T0, prior_shape_alpha, prior_rate_alpha,
     }
     message("outer loop: ", m,"\n", elbo_values[[m + 1]], '\n', sep="")
   }
+  elbo_values <- elbo_values[seq_len(m + 1)]
   W1 <- params$post_shape_alpha
   W2 <- params$post_rate_alpha
   Plog <- params$log_prob_matrix
