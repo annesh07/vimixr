@@ -57,6 +57,7 @@
 <span>  n_inits <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  Seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  pca_plot <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  covariance_type <span class="op">=</span> <span class="st">"full"</span>,</span>
 <span>  fixed_variance <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  cluster_specific_covariance <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -128,6 +129,10 @@ integers or NULL. Default is NULL.</p></dd>
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>Logical input for parallelisation. Default is FALSE</p></dd>
+
+
+<dt id="arg-pca-plot">pca_plot<a class="anchor" aria-label="anchor" href="#arg-pca-plot"></a></dt>
+<dd><p>Logical input for pca plot. Default is FALSE</p></dd>
 
 
 <dt id="arg-covariance-type">covariance_type<a class="anchor" aria-label="anchor" href="#arg-covariance-type"></a></dt>
@@ -352,8 +357,8 @@ the diagonal shape parameters</dt>
 the diagonal rate parameters</dt>
 <dd></dd>
 
-<dt><code>post_var_offd_cs_cov</code>: initial value for posterior update of
-the off-diagonal variance parameters</dt>
+<dt><code>post_var_offd_cs_cov</code>: initial value for sum, squared sum and log sum of
+the off-diagonal variance parameters for computation purpose, strictly positive</dt>
 <dd></dd>
 
 <dt><code>scaling_cov_eta</code>: a non-negative scaling factor for
@@ -510,7 +515,6 @@ covariance matrix of the DP mean parameters</dt>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              Length Class           Mode     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> posterior    5      -none-          list     </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> optimisation 3      -none-          list     </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> PCA_viz      1      ggplot2::ggplot object   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> ELBO_viz     1      ggplot2::ggplot object   </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Seed_used    1      -none-          character</span>
 <span class="r-in"><span> <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">res</span><span class="op">)</span></span></span>

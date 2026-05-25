@@ -32,6 +32,9 @@
   : Log-sum-exponential computation on the log probability allocation
   matrix
 
+- [`lower_tri_stats()`](https://annesh07.github.io/vimixr/reference/lower_tri_stats.md)
+  : lower_tri_stats
+
 - [`mat_mult()`](https://annesh07.github.io/vimixr/reference/mat_mult.md)
   : mat_mult
 
@@ -51,6 +54,9 @@
 
 - [`run_single()`](https://annesh07.github.io/vimixr/reference/run_single.md)
   : CVI implementation for one set of initial parameters
+
+- [`sparse_cov_op()`](https://annesh07.github.io/vimixr/reference/sparse_cov_op.md)
+  : sparse_cov_op
 
 - [`sweep_3D()`](https://annesh07.github.io/vimixr/reference/sweep_3D.md)
   : sweep_3D

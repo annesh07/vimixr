@@ -20,6 +20,7 @@ cvi_npmm(
   n_inits = 5,
   Seed = NULL,
   parallel = FALSE,
+  pca_plot = FALSE,
   covariance_type = "full",
   fixed_variance = FALSE,
   cluster_specific_covariance = TRUE,
@@ -88,6 +89,10 @@ cvi_npmm(
 - parallel:
 
   Logical input for parallelisation. Default is FALSE
+
+- pca_plot:
+
+  Logical input for pca plot. Default is FALSE
 
 - covariance_type:
 
@@ -254,8 +259,9 @@ input arguments in `...` when calling `cvi_npmm()`:
       diagonal shape parameters:
     - `post_rate_d_cs_cov`: initial value for posterior update of the
       diagonal rate parameters:
-    - `post_var_offd_cs_cov`: initial value for posterior update of the
-      off-diagonal variance parameters:
+    - `post_var_offd_cs_cov`: initial value for sum, squared sum and log
+      sum of the off-diagonal variance parameters for computation
+      purpose, strictly positive:
     - `scaling_cov_eta`: a non-negative scaling factor for covariance
       matrix of the DP mean parameters:
 
@@ -390,7 +396,6 @@ res <- cvi_npmm(X, variational_params = 20, prior_shape_alpha = 0.001,
 #>              Length Class           Mode     
 #> posterior    5      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
  plot(res)

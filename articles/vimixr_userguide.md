@@ -32,7 +32,6 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #>              Length Class           Mode     
 #> posterior    5      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
   plot(res)
@@ -63,7 +62,6 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #>              Length Class           Mode     
 #> posterior    6      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
   plot(res)
@@ -91,7 +89,6 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #>              Length Class           Mode     
 #> posterior    5      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
   plot(res)
@@ -122,7 +119,6 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #>              Length Class           Mode     
 #> posterior    6      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
   plot(res)
@@ -157,7 +153,6 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #>              Length Class           Mode     
 #> posterior    6      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
   plot(res)
@@ -187,7 +182,6 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #>              Length Class           Mode     
 #> posterior    6      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
   plot(res)
@@ -213,13 +207,12 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
            prior_var_offd_cs_cov = 1000,
            post_shape_d_cs_cov = matrix(0.001, 1, 20),
            post_rate_d_cs_cov = matrix(0.001, 20, ncol(X)),
-           post_var_offd_cs_cov = array(0.001, c(ncol(X), ncol(X), 20)),
+           post_var_offd_cs_cov = matrix(0.001, 20, 3),
            scaling_cov_eta = nrow(X))
   summary(res)
 #>              Length Class           Mode     
 #> posterior    8      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
   plot(res)
@@ -251,7 +244,6 @@ X <- rbind(matrix(rnorm(100, m=0, sd=0.5), ncol=2),
 #>              Length Class           Mode     
 #> posterior    6      -none-          list     
 #> optimisation 3      -none-          list     
-#> PCA_viz      1      ggplot2::ggplot object   
 #> ELBO_viz     1      ggplot2::ggplot object   
 #> Seed_used    1      -none-          character
   plot(res)
