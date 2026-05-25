@@ -33,6 +33,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// lower_tri_stats
+Rcpp::NumericVector lower_tri_stats(const Rcpp::NumericMatrix& M);
+RcppExport SEXP _vimixr_lower_tri_stats(SEXP MSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type M(MSEXP);
+    rcpp_result_gen = Rcpp::wrap(lower_tri_stats(M));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mat_mult
 SEXP mat_mult(SEXP A, SEXP B, bool transpose_A, bool transpose_B);
 RcppExport SEXP _vimixr_mat_mult(SEXP ASEXP, SEXP BSEXP, SEXP transpose_ASEXP, SEXP transpose_BSEXP) {
@@ -72,6 +83,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// sparse_cov_op
+double sparse_cov_op(const Rcpp::NumericMatrix& X, const Rcpp::NumericMatrix& P, const Rcpp::NumericMatrix& inv_C0, const Rcpp::NumericMatrix& L1);
+RcppExport SEXP _vimixr_sparse_cov_op(SEXP XSEXP, SEXP PSEXP, SEXP inv_C0SEXP, SEXP L1SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type X(XSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type P(PSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type inv_C0(inv_C0SEXP);
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type L1(L1SEXP);
+    rcpp_result_gen = Rcpp::wrap(sparse_cov_op(X, P, inv_C0, L1));
+    return rcpp_result_gen;
+END_RCPP
+}
 // sweep_3D
 NumericVector sweep_3D(NumericVector A, NumericVector R, IntegerVector dims, int n_threads);
 RcppExport SEXP _vimixr_sweep_3D(SEXP ASEXP, SEXP RSEXP, SEXP dimsSEXP, SEXP n_threadsSEXP) {
@@ -103,9 +128,11 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_vimixr_cum_clustprop", (DL_FUNC) &_vimixr_cum_clustprop, 1},
     {"_vimixr_cum_clustprop_var", (DL_FUNC) &_vimixr_cum_clustprop_var, 1},
+    {"_vimixr_lower_tri_stats", (DL_FUNC) &_vimixr_lower_tri_stats, 1},
     {"_vimixr_mat_mult", (DL_FUNC) &_vimixr_mat_mult, 4},
     {"_vimixr_mat_mult_t", (DL_FUNC) &_vimixr_mat_mult_t, 3},
     {"_vimixr_quadratic_form_diag", (DL_FUNC) &_vimixr_quadratic_form_diag, 2},
+    {"_vimixr_sparse_cov_op", (DL_FUNC) &_vimixr_sparse_cov_op, 4},
     {"_vimixr_sweep_3D", (DL_FUNC) &_vimixr_sweep_3D, 4},
     {"_vimixr_t_mat_mult", (DL_FUNC) &_vimixr_t_mat_mult, 3},
     {NULL, NULL, 0}

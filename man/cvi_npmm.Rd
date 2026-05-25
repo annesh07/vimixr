@@ -18,6 +18,7 @@ cvi_npmm(
   n_inits = 5,
   Seed = NULL,
   parallel = FALSE,
+  pca_plot = FALSE,
   covariance_type = "full",
   fixed_variance = FALSE,
   cluster_specific_covariance = TRUE,
@@ -60,6 +61,8 @@ case-specific hyperparameters are NULL. Default is 5}
 integers or NULL. Default is NULL.}
 
 \item{parallel}{Logical input for parallelisation. Default is FALSE}
+
+\item{pca_plot}{Logical input for pca plot. Default is FALSE}
 
 \item{covariance_type}{covariance matrix is considered diagonal or full.
 Default is 'full'}
@@ -206,8 +209,8 @@ elements}{}
 the diagonal shape parameters}{}
 \item{\code{post_rate_d_cs_cov}: initial value for posterior update of
 the diagonal rate parameters}{}
-\item{\code{post_var_offd_cs_cov}: initial value for posterior update of
-the off-diagonal variance parameters}{}
+\item{\code{post_var_offd_cs_cov}: initial value for sum, squared sum and log sum of
+the off-diagonal variance parameters for computation purpose, strictly positive}{}
 \item{\code{scaling_cov_eta}: a non-negative scaling factor for
 covariance matrix of the DP mean parameters}{}
 }

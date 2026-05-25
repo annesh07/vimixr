@@ -487,15 +487,16 @@ CVI_update_function <- function(fixed_variance = FALSE,
           RP <- Rfast::colsums(P)
           a1 <- matrix(a0 + RP + 1, nrow = 1, ncol = T0)
           idx <- 1 + 0:(D-1) * (D+1)
-          L1_constant <- mat_mult(X, P, transpose_A = TRUE)
-          C01_constant <- k0*mat_mult(Mu0, Mu0, transpose_A = TRUE)
-          B1_constant <- mat_mult(X^2, P, transpose_A = TRUE)
+          L1_constant <- crossprod(X, P)
+          C01_constant <- k0*crossprod(Mu0, Mu0)
+          B1_constant <- crossprod(X^2, P)
           for (i in 1:T0){
             B1[i,] <- b0[i,] + 0.5*B1_constant[,i] + (0.5*k0*Mu0^2)
-            C01 <- 1/(1/c0 + abs(mat_mult(X, X*P[,i], transpose_A = TRUE) + C01_constant))
-            C01[idx] <- 0
+            #C01 <- (1/c0 + abs(crossprod(X, X*P[,i]) + C01_constant))[-idx]
+            #C01[idx] <- 0
             #C1[,,i] <- Rfast::Diag.fill(1/C01, rep(0, D))
-            C1[,,i] <- C01
+            #C1[i,] <- sparse_cov_op(C01)
+            C1[i,] <- lower_tri_stats(1/c0 + abs(crossprod(X, X*P[,i]) + C01_constant))
             L1[i,] <- (Mu0*k0 + L1_constant[,i])/(k0 + RP[i])
           }
           #expectation of inverse of C0, data covariance matrix
@@ -528,7 +529,7 @@ CVI_update_function <- function(fixed_variance = FALSE,
           L1 <- L1[ord,]
           a1 <- a1[1,ord, drop = FALSE]
           B1 <- B1[ord,]
-          C1 <- C1[,,ord]
+          C1 <- C1[ord,]
           
           params$post_shape_d_cs_cov <- a1
           params$post_rate_d_cs_cov <- B1

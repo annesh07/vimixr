@@ -110,8 +110,8 @@
 #'            the diagonal shape parameters}{}
 #'      \item{\code{post_rate_d_cs_cov}: initial value for posterior update of
 #'            the diagonal rate parameters}{}
-#'      \item{\code{post_var_offd_cs_cov}: initial value for posterior update of
-#'            the off-diagonal variance parameters}{}
+#'      \item{\code{post_var_offd_cs_cov}: initial value for sum, squared sum and log sum of
+#'            the off-diagonal variance parameters for computation purpose, strictly positive}{}
 #'      \item{\code{scaling_cov_eta}: a non-negative scaling factor for
 #'            covariance matrix of the DP mean parameters}{}
 #'    }
@@ -160,6 +160,7 @@
 #' @param Seed Seeds for random initialisation; either a vector of n_inits 
 #' integers or NULL. Default is NULL.
 #' @param parallel Logical input for parallelisation. Default is FALSE
+#' @param pca_plot Logical input for pca plot. Default is FALSE
 #' @param fixed_variance covariance matrix of the data is considered known (fixed)
 #' or unknown. Default is FALSE
 #' @param covariance_type covariance matrix is considered diagonal or full.
@@ -224,6 +225,7 @@ cvi_npmm <- function(X, variational_params,
                      n_inits = 5,
                      Seed = NULL,
                      parallel = FALSE,
+                     pca_plot = FALSE,
                      covariance_type="full", fixed_variance=FALSE,
                      cluster_specific_covariance=TRUE,
                      variance_prior_type=c("IW", "decomposed", "sparse",
@@ -327,23 +329,27 @@ cvi_npmm <- function(X, variational_params,
   clustering <- apply(posterior[["log Probability matrix"]], 1, which.max)
   
   # PCA plot
-  if (ncol(X)==2){
-    pca <- stats::prcomp(X)
-    var_explained <- pca$sdev^2 / sum(pca$sdev^2)
-  } else {
-    pca <- irlba::prcomp_irlba(X,2)
-    var_explained <- pca$sdev^2 / pca$totalvar
+  if (pca_plot == TRUE){
+    if (ncol(X)==2){
+      pca <- stats::prcomp(X)
+      var_explained <- pca$sdev^2 / sum(pca$sdev^2)
+    } else {
+      pca <- irlba::prcomp_irlba(X,2)
+      var_explained <- pca$sdev^2 / pca$totalvar
+    }
+    pc1_pct <- round(var_explained[1] * 100, 2)
+    pc2_pct <- round(var_explained[2] * 100, 2)
+    #the plot
+    pca_df <- data.frame("PC1" = pca$x[,1], "PC2" = pca$x[,2], "Cluster" = as.factor(clustering))
+    ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2, color = .data$Cluster, shape = .data$Cluster)) +
+      ggplot2::geom_point(size = 3, alpha = 0.8) +
+      ggplot2::labs(title = "PCA projection of SparseDPMM clusters", 
+                    x = paste0("PC 1 (", pc1_pct, "%)"), 
+                    y = paste0("PC 2 (", pc2_pct, "%)")) +
+      ggplot2::theme_minimal()
+    
+    best_result$PCA_viz <- ggplot_pca
   }
-  pc1_pct <- round(var_explained[1] * 100, 2)
-  pc2_pct <- round(var_explained[2] * 100, 2)
-  #the plot
-  pca_df <- data.frame("PC1" = pca$x[,1], "PC2" = pca$x[,2], "Cluster" = as.factor(clustering))
-  ggplot_pca <- ggplot2::ggplot(pca_df, ggplot2::aes(x = .data$PC1, y = .data$PC2, color = .data$Cluster, shape = .data$Cluster)) +
-    ggplot2::geom_point(size = 3, alpha = 0.8) +
-    ggplot2::labs(title = "PCA projection of SparseDPMM clusters", 
-                  x = paste0("PC 1 (", pc1_pct, "%)"), 
-                  y = paste0("PC 2 (", pc2_pct, "%)")) +
-    ggplot2::theme_minimal()
   
   # ELBO plot
   Elbo <- unlist(lapply(optimisation$ELBO[-1], sum))
@@ -353,8 +359,6 @@ cvi_npmm <- function(X, variational_params,
     ggplot2::labs(title = "ELBO Optimisation", x = "Iterations", y = "ELBO") +
     ggplot2::theme_minimal()
   
-  # Attach to best_result
-  best_result$PCA_viz <- ggplot_pca
   best_result$ELBO_viz <- ggplot_ELBO
   
   #Attach seeds used for reproducibility

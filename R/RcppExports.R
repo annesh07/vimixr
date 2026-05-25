@@ -21,6 +21,16 @@ cum_clustprop_var <- function(P1) {
     .Call(`_vimixr_cum_clustprop_var`, P1)
 }
 
+#' lower_tri_stats
+#'
+#' Extract lower diagonal elements of a Matrix, and perform sum, squared sum and log sum
+#' @param M matrix
+#' @return a vector of sum, squared sum and log sum elements
+#' @export
+lower_tri_stats <- function(M) {
+    .Call(`_vimixr_lower_tri_stats`, M)
+}
+
 #' mat_mult
 #'
 #' Calculate matrix multiplication with optional transposition.
@@ -55,6 +65,16 @@ mat_mult_t <- function(A, B, C) {
 #' @export
 quadratic_form_diag <- function(A, B) {
     .Call(`_vimixr_quadratic_form_diag`, A, B)
+}
+
+#' sparse_cov_op
+#'
+#' Calculate the sum, squared sum and log sum of off-diagonal vector elements from the covariance array
+#' @param x vector
+#' @return a vector of sum, squared sum and log sum elements
+#' @export
+sparse_cov_op <- function(X, P, inv_C0, L1) {
+    .Call(`_vimixr_sparse_cov_op`, X, P, inv_C0, L1)
 }
 
 #' sweep_3D
