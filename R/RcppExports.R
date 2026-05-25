@@ -70,8 +70,11 @@ quadratic_form_diag <- function(A, B) {
 #' sparse_cov_op
 #'
 #' Calculate the sum, squared sum and log sum of off-diagonal vector elements from the covariance array
-#' @param x vector
-#' @return a vector of sum, squared sum and log sum elements
+#' @param X data matrix
+#' @param P probability allocation matrix
+#' @param inv_C0 matrix corresponding diagonal elements of the cluster precision matrices
+#' @param L1 cluster mean matrix
+#' @return likelihood term calculation in elbo
 #' @export
 sparse_cov_op <- function(X, P, inv_C0, L1) {
     .Call(`_vimixr_sparse_cov_op`, X, P, inv_C0, L1)

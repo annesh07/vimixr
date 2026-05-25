@@ -7,10 +7,16 @@
 sparse_cov_op(X, P, inv_C0, L1)
 }
 \arguments{
-\item{x}{vector}
+\item{X}{data matrix}
+
+\item{P}{probability allocation matrix}
+
+\item{inv_C0}{matrix corresponding diagonal elements of the cluster precision matrices}
+
+\item{L1}{cluster mean matrix}
 }
 \value{
-a vector of sum, squared sum and log sum elements
+likelihood term calculation in elbo
 }
 \description{
 Calculate the sum, squared sum and log sum of off-diagonal vector elements from the covariance array

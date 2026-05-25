@@ -3,16 +3,19 @@ using namespace Rcpp;
 //' sparse_cov_op
 //'
 //' Calculate the sum, squared sum and log sum of off-diagonal vector elements from the covariance array
-//' @param x vector
-//' @return a vector of sum, squared sum and log sum elements
+//' @param X data matrix
+//' @param P probability allocation matrix
+//' @param inv_C0 matrix corresponding diagonal elements of the cluster precision matrices
+//' @param L1 cluster mean matrix
+//' @return likelihood term calculation in elbo
 //' @export
 // [[Rcpp::export]]
  
  double sparse_cov_op(
-     const Rcpp::NumericMatrix& X,      // n x p
-     const Rcpp::NumericMatrix& P,      // n x K
-     const Rcpp::NumericMatrix& inv_C0, // K x p
-     const Rcpp::NumericMatrix& L1)     // K x p
+     const Rcpp::NumericMatrix& X,      
+     const Rcpp::NumericMatrix& P,      
+     const Rcpp::NumericMatrix& inv_C0, 
+     const Rcpp::NumericMatrix& L1)     
  {
    const int n = X.nrow();
    const int p = X.ncol();
