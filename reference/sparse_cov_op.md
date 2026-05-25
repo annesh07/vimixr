@@ -11,10 +11,23 @@ sparse_cov_op(X, P, inv_C0, L1)
 
 ## Arguments
 
-- x:
+- X:
 
-  vector
+  data matrix
+
+- P:
+
+  probability allocation matrix
+
+- inv_C0:
+
+  matrix corresponding diagonal elements of the cluster precision
+  matrices
+
+- L1:
+
+  cluster mean matrix
 
 ## Value
 
-a vector of sum, squared sum and log sum elements
+likelihood term calculation in elbo
